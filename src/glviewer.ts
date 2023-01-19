@@ -9,7 +9,7 @@ import { MODULE_NAME, MODULE_VERSION } from './version';
 import { GLProgram } from './glprogram';
 import { GLBuffer } from './glbuffer';
 import { GLVertexArray } from './glvertexarray';
-import { m4dot, m4inverse, m4ProjectionMatrix, m4Translation } from './matrix';
+import { m4dot, m4getColumnI, m4getColumnK, m4inverse, m4ProjectionMatrix, m4Translation, m4Xrotation, m4Yrotation, vec3Add, vec3Scale } from './matrix';
 import { buffer_to_array } from './arraybuffer';
 
 
@@ -25,6 +25,9 @@ export class GLModel extends DOMWidgetModel {
       _view_module_version: MODULE_VERSION,
       width:700,
       height:500,
+      camera_pos:[0,50,200],
+      camera_yaw:0,
+      camera_pitch:0,
     };
   }
 
@@ -64,7 +67,18 @@ export class GLModel extends DOMWidgetModel {
     this.run_commands();
   }
 
+  private update_camera(){
+    let pos = this.get('camera_pos');
+    let yaw = this.get('camera_yaw') * Math.PI / 180.0;
+    let pitch = this.get('camera_pitch') * Math.PI / 180.0;
+    this.camera_matrix = m4Translation(pos[0], pos[1], pos[2]);
+    this.camera_matrix = m4dot(this.camera_matrix, m4Yrotation(yaw));
+    this.camera_matrix = m4dot(this.camera_matrix, m4Xrotation(pitch));
+    this.view_matrix = m4inverse(this.camera_matrix);
+  }
+
   run_commands(){
+    this.update_camera();
     this.view_proj_matrix = m4dot(this.projection_matrix, this.view_matrix);
     const view_proj_f32 = new Float32Array(this.view_proj_matrix);
     this.commands.forEach((command:any)=>{
@@ -73,7 +87,13 @@ export class GLModel extends DOMWidgetModel {
             if (this.ctx) this.ctx.clearColor(command.r, command.g, command.b, command.a);
             break;
           case 'clear':
-            if (this.ctx) this.ctx.clear(this.ctx.DEPTH_BUFFER_BIT | this.ctx.COLOR_BUFFER_BIT);
+            if (this.ctx) 
+            {
+              let bits = 0;
+              if (command.depth) bits |= this.ctx.DEPTH_BUFFER_BIT;
+              if (command.color) bits |= this.ctx.COLOR_BUFFER_BIT;
+              this.ctx.clear(bits);
+            }
             break;
           case 'useProgram':
             if (this.ctx){
@@ -205,35 +225,123 @@ export class GLViewer extends DOMWidgetView {
     this.el.addEventListener('mouseout', {
       handleEvent: this.onMouseOut.bind(this)
     });
+    this.el.addEventListener('keydown', {
+      handleEvent: this.onKeyDown.bind(this)
+    });
+    this.el.addEventListener('keyup', {
+      handleEvent: this.onKeyUp.bind(this)
+    });
+    this.el.setAttribute('tabindex', '0');
   }
-
+ 
   private resizeCanvas() {
     this.el.setAttribute('width', this.model.get('width'));
     this.el.setAttribute('height', this.model.get('height'));
     this.model.resizeCanvas();
   }
 
+  private redraw(){
+    this.will_redraw = false;
+
+    // update movement if needed
+    if (this.move_direction[0] || this.move_direction[1] || this.move_direction[2] || this.move_direction[3])
+    {
+      let forward_axis = m4getColumnK(this.model.camera_matrix);
+      let side_axis = m4getColumnI(this.model.camera_matrix);
+      let camera_pos = this.model.get('camera_pos');
+      if (this.move_direction[0]){
+        camera_pos = vec3Add(camera_pos, vec3Scale(forward_axis, -0.5));
+      }
+      if (this.move_direction[2]){
+        camera_pos = vec3Add(camera_pos, vec3Scale(forward_axis, 0.5));
+      }
+      if (this.move_direction[1]){
+        camera_pos = vec3Add(camera_pos, vec3Scale(side_axis, -0.5));
+      }
+      if (this.move_direction[3]){
+        camera_pos = vec3Add(camera_pos, vec3Scale(side_axis, 0.5));
+      }
+      this.model.set('camera_pos', camera_pos);
+      this.touch();
+      // request a new frame if we are moving
+      this.requestRedraw();
+    }
+
+    // re draw
+    this.model.run_commands();
+  }
+
+  private requestRedraw(){
+    if (this.will_redraw == false){
+      this.will_redraw = true;
+      requestAnimationFrame(this.redraw.bind(this));
+    }
+  }
+
   private onMouseMove(event: MouseEvent) {
-    this.model.send({ event: 'mouse_move', ...this.getCoordinates(event) }, {});
+    //this.model.send({ event: 'mouse_move', ...this.getCoordinates(event) }, {});
+    if(this.is_mouse_down){
+      this.model.set('camera_yaw', this.model.get('camera_yaw')-(event.movementX)*0.2);
+      this.model.set('camera_pitch', this.model.get('camera_pitch')-(event.movementY)*0.2);
+      this.touch();
+      this.requestRedraw();
+    }
   }
 
   private onMouseDown(event: MouseEvent) {
-    console.log('mouse_down');
-    // Bring focus to this element, so keyboard events can be triggered
-    this.el.focus();
-    this.model.send({ event: 'mouse_down', ...this.getCoordinates(event) }, {});
-    
-    //test
-    //console.log({ event: 'mouse_down', ...this.getCoordinates(event) });
-    //this.model.handle_custom_messages([{cmd:'clear'}]);
+    this.is_mouse_down = true;
+    this.model.canvas.focus();
   }
 
   private onMouseUp(event: MouseEvent) {
-    this.model.send({ event: 'mouse_up', ...this.getCoordinates(event) }, {});
+    this.is_mouse_down = false;
   }
 
   private onMouseOut(event: MouseEvent) {
-    this.model.send({ event: 'mouse_out', ...this.getCoordinates(event) }, {});
+    this.is_mouse_down = false;
+    this.move_direction = [false, false, false, false];
+  }
+
+  private onKeyDown(event: KeyboardEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if(event.repeat == false){
+      if(event.key == 'w'){
+        this.move_direction[0] = true;
+        this.requestRedraw();
+      }
+      else if(event.key == 'a'){
+        this.move_direction[1] = true;
+        this.requestRedraw();
+      }
+      else if(event.key == 's'){
+        this.move_direction[2] = true;
+        this.requestRedraw();
+      }
+      else if(event.key == 'd'){
+        this.move_direction[3] = true;
+        this.requestRedraw();
+      }
+    }
+  }
+
+  private onKeyUp(event: KeyboardEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if(event.key == 'w'){
+      this.move_direction[0] = false;
+    }
+    else if(event.key == 'a'){
+      this.move_direction[1] = false;
+    }
+    else if(event.key == 's'){
+      this.move_direction[2] = false;
+    }
+    else if(event.key == 'd'){
+      this.move_direction[3] = false;
+    }
   }
 
   protected getCoordinates(event: MouseEvent | Touch) {
@@ -246,4 +354,7 @@ export class GLViewer extends DOMWidgetView {
   }
 
   model : GLModel;
+  is_mouse_down : boolean = false;
+  move_direction : boolean[] = [false, false, false, false];
+  will_redraw = false;
 }

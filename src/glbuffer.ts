@@ -53,18 +53,16 @@ export class GLBuffer extends DOMWidgetModel{
         switch (msg.type) {
             case 'update':
               const gl:WebGL2RenderingContext = this.get('_glmodel').ctx;
-              this.update_buffer(gl, buffer_to_array(msg.data));
+              this.update_buffer(gl, msg.is_dynamic, buffer_to_array(msg.data));
               break;
         }
       }
     
-    update_buffer(gl:WebGL2RenderingContext, data:any){
+    update_buffer(gl:WebGL2RenderingContext, is_dynamic:boolean, data:any){
       gl.bindBuffer(gl.ARRAY_BUFFER, this.get('_buffer'));
-      gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+      gl.bufferData(gl.ARRAY_BUFFER, data, (is_dynamic) ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW);
     }
 }
-  
-  
   
 export class GLBufferView extends DOMWidgetView {
 

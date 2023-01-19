@@ -22,6 +22,46 @@ function frustrum(left: number, right: number, bottom: number, top: number, near
     ]
 }
 
+export function m4getTranslation(m:number[]){
+    return [
+        m[3], m[7], m[11]
+    ];
+}
+
+export function m4getColumnI(m:number[]){
+    return [
+        m[0], m[4], m[8]
+    ];
+}
+
+export function m4getColumnJ(m:number[]){
+    return [
+        m[1], m[5], m[9]
+    ];
+}
+
+export function m4getColumnK(m:number[]){
+    return [
+        m[2], m[6], m[10]
+    ];
+}
+
+export function vec3Add(a:number[], b:number[]){
+    return[
+        a[0] + b[0],
+        a[1] + b[1],
+        a[2] + b[2]
+    ]
+}
+
+export function vec3Scale(a:number[], scale:number){
+    return[
+        a[0] * scale,
+        a[1] * scale,
+        a[2] * scale
+    ]
+}
+
 export function m4Translation(tx:number, ty:number, tz:number) {
     return [
         1, 0, 0, tx,

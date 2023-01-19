@@ -16,9 +16,10 @@ class GLBufferWidget(DOMWidget):
     _glmodel = Instance(DOMWidget).tag(sync=True, **widget_serialization)
     uid = Int(-1).tag(sync=True)
 
-    def __init__(self, **kwargs):
+    def __init__(self, is_dynamic, **kwargs):
         super().__init__(**kwargs)
+        self._is_dynamic = is_dynamic
 
     def update(self, data):
-        self.send({'type':'update', 'data':array_to_buffer(data)})
+        self.send({'type':'update', 'dynamic':self._is_dynamic, 'data':array_to_buffer(data)})
 
