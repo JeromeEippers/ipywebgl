@@ -1,0 +1,13 @@
+# python 3 requirements for animation systems
+# general ::
+wheel
+jupyterlab
+
+# maths ::
+numpy
+scipy
+
+# create widget
+ipywidgets
+cookiecutter
+nodejs
