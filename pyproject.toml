@@ -33,6 +33,7 @@ classifiers = [
 ]
 dependencies = [
     "ipywidgets>=7.0.0",
+    "numpy",
 ]
 version = "0.1.0.dev0"
 
@@ -87,6 +88,7 @@ skip-if-exists = [
 ]
 dependencies = [
     "hatch-jupyter-builder>=0.5.0",
+    "numpy",
 ]
 
 [tool.hatch.build.hooks.jupyter-builder.build-kwargs]
