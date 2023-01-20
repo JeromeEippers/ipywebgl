@@ -5,9 +5,12 @@ jupyterlab
 
 # maths ::
 numpy
-scipy
 
 # create widget
 ipywidgets
-cookiecutter
 nodejs
+sphinx
+sphinx_rtd_theme
+nbsphinx
+jupyter_sphinx
+nbsphinx_link

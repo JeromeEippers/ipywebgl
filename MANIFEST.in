@@ -3,8 +3,6 @@ include README.md
 
 include setup.py
 include pyproject.toml
-include pytest.ini
-include .coverage.rc
 
 include tsconfig.json
 include package.json
@@ -20,10 +18,6 @@ prune docs/dist
 
 # Examples
 graft examples
-
-# Tests
-graft tests
-prune tests/build
 
 # Javascript files
 graft ipywebgl/nbextension

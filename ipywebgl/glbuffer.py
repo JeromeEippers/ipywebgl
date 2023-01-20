@@ -16,10 +16,18 @@ class GLBufferWidget(DOMWidget):
     _glmodel = Instance(DOMWidget).tag(sync=True, **widget_serialization)
     uid = Int(-1).tag(sync=True)
 
-    def __init__(self, is_dynamic, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._is_dynamic = is_dynamic
 
-    def update(self, data):
-        self.send({'type':'update', 'dynamic':self._is_dynamic, 'data':array_to_buffer(data)})
+    def update(self, target='array_buffer', src_data=None, usage='static_draw'):
+        """update the buffer data
+
+        This call will also bind the buffer before calling bufferData. Be carefull if you already have bound a vertex array !
+
+        Args:
+            target ({'array_buffer', 'element_array_buffer', 'copy_read_buffer', 'copy_write_buffer', 'transform_feedback_buffer', 'uniform_buffer', 'pixel_pack_buffer', 'pixel_unpack_buffer'}, optional): the binding point (target). Defaults to 'array_buffer'.
+            srcData (np.array, optional): a np.array that will be copied into the data store. If null, a data store is still created, but the content is uninitialized and undefined.. Defaults to None.
+            usage ({'static_draw', 'dynamic_draw', 'stream_draw', 'static_read', 'dynamic_read', 'stream_read', 'static_copy', 'dynamic_copy', 'stream_copy'}, optional):  the intended usage pattern of the data store for optimization purposes. Defaults to 'static_draw'.
+        """
+        self.send({'cmd':'update', 'target':target, 'srcData':array_to_buffer(src_data), 'usage':usage})
 

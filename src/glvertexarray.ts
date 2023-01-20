@@ -113,7 +113,10 @@ export class GLVertexArray extends DOMWidgetModel{
                     console.error('un supported buffer type');
                     this.set("message", "unsupported type of buffer : "+element.type);
                     this.save_changes();
-                    throw Error("unsupported type of buffer : "+element.type);
+                    console.error("unsupported type of buffer : "+element.type);
+                    ctx.bindVertexArray(null);
+                    ctx.bindBuffer(ctx.ARRAY_BUFFER, null);
+                    return false;
             }
             attributes.push({name:element.attrib, gltype:gltype, type_name:element.type, count:element.count, offset:stride});
             stride += comp_size * element.count;
@@ -125,7 +128,10 @@ export class GLVertexArray extends DOMWidgetModel{
             if (location==null || location<0){
                 this.set("message", "unknown attribute in program : " + element.name);
                 this.save_changes();
-                throw Error("unknown attribute in program : " + element.name);
+                console.error("unknown attribute in program : " + element.name);
+                ctx.bindVertexArray(null);
+                ctx.bindBuffer(ctx.ARRAY_BUFFER, null);
+                return false;
             }
             ctx.vertexAttribPointer(location, element.count, element.gltype, false, stride, element.offset);
             ctx.enableVertexAttribArray(location);
@@ -136,6 +142,10 @@ export class GLVertexArray extends DOMWidgetModel{
       this.set('message', 'linked to program id :'+String(program_id));
       this.set('attributes', complete_attributes);
       this.save_changes();
+
+      ctx.bindVertexArray(null);
+      ctx.bindBuffer(ctx.ARRAY_BUFFER, null);
+      return true;
     }
 }
   

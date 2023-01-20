@@ -11,12 +11,6 @@ You can install using `pip`:
 pip install ipywebgl
 ```
 
-If you are using Jupyter Notebook 5.2 or earlier, you may also need to enable
-the nbextension:
-```bash
-jupyter nbextension enable --py [--sys-prefix|--user|--system] ipywebgl
-```
-
 ## Development Installation
 
 Create a dev environment:

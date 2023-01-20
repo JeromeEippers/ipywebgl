@@ -8,6 +8,7 @@ import {
 import { MODULE_NAME, MODULE_VERSION } from './version';
 
 import { buffer_to_array } from './arraybuffer';
+import { convert_buffer_target, convert_usage } from './glbufferhelper';
 
 export class GLBuffer extends DOMWidgetModel{
     defaults() {
@@ -49,18 +50,35 @@ export class GLBuffer extends DOMWidgetModel{
         }
     }
 
-    handle_custom_messages(msg: any) {
-        switch (msg.type) {
+    handle_custom_messages(command: any) {
+        switch (command.cmd) {
             case 'update':
               const gl:WebGL2RenderingContext = this.get('_glmodel').ctx;
-              this.update_buffer(gl, msg.is_dynamic, buffer_to_array(msg.data));
+              let buf = this.get('_buffer');
+              let target = convert_buffer_target(gl, command.target);
+              gl.bindBuffer(target, buf);
+              let usage = convert_usage(gl, command.usage);
+              if (command.srcData)
+              {
+                gl.bufferData(target, buffer_to_array(command.srcData), usage);
+              }
+              else{
+                gl.bufferData(target, null, usage);
+              }
               break;
         }
       }
     
-    update_buffer(gl:WebGL2RenderingContext, is_dynamic:boolean, data:any){
-      gl.bindBuffer(gl.ARRAY_BUFFER, this.get('_buffer'));
-      gl.bufferData(gl.ARRAY_BUFFER, data, (is_dynamic) ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW);
+    update_buffer(gl:WebGL2RenderingContext, command:any){
+      let target = convert_buffer_target(gl, command.target);
+      let usage = convert_usage(gl, command.usage);
+      if (command.srcData)
+      {
+        gl.bufferData(target, buffer_to_array(command.srcData), usage);
+      }
+      else{
+        gl.bufferData(target, null, usage);
+      }
     }
 }
   

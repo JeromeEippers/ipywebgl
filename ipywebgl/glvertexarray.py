@@ -20,12 +20,13 @@ class GLVertexArrayWidget(DOMWidget):
         super().__init__(**kwargs)
 
     def bind(self, program, buffer_definitions):
-        """_summary_
+        """bind a program, one or more buffer array and link the attributes.
 
-            supported type : i8, i16, i32, u8, u16, u32, f16, f32
+        supported type for buffer definitions : i8, i16, i32, u8, u16, u32, f16, f32
+
         Args:
-            program (_type_): _description_
-            buffer_definitions (List of tupple): [(buffer, "3f32 3f32", "in_vertex", "in_normal"), ...]"
+            program (GLProgramWidget): the program to use
+            buffer_definitions (List of tupple): [(buffer, "3f32 3f32", "in_vertex", "in_normal"), ...]", the buffer is a GLBufferWidget
         """
         buffers = []
         for buf_def in buffer_definitions:

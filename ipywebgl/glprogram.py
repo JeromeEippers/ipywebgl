@@ -25,5 +25,11 @@ class GLProgramWidget(DOMWidget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def compile(self, vertex_code, fragment_code):
+    def compile(self, vertex_code:str, fragment_code:str):
+        """Compile the vertex and fragment shader code and link them to the program.
+
+        Args:
+            vertex_code (str): the vertex shader code
+            fragment_code (str): the fragment shader code
+        """
         self.send({'type':'compile', 'vertex_code':vertex_code, 'fragment_code':fragment_code})

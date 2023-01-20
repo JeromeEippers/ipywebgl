@@ -28,6 +28,7 @@ Contents
 
    installing
    introduction
+   api
 
 .. toctree::
    :maxdepth: 1

@@ -11,6 +11,7 @@ import { GLBuffer } from './glbuffer';
 import { GLVertexArray } from './glvertexarray';
 import { m4dot, m4getColumnI, m4getColumnK, m4inverse, m4ProjectionMatrix, m4Translation, m4Xrotation, m4Yrotation, vec3Add, vec3Scale } from './matrix';
 import { buffer_to_array } from './arraybuffer';
+import { convert_buffer_target } from './glbufferhelper';
 
 
 export class GLModel extends DOMWidgetModel {
@@ -83,6 +84,39 @@ export class GLModel extends DOMWidgetModel {
     const view_proj_f32 = new Float32Array(this.view_proj_matrix);
     this.commands.forEach((command:any)=>{
         switch (command.cmd) {
+          case 'bindBuffer':
+            if (this.ctx){
+              let buf = (command.buffer>=0)? this.get_buffer(command.buffer):null;
+              let target = convert_buffer_target(this.ctx, command.target);
+              if (buf)
+              {
+                this.ctx.bindBuffer(target, buf.get('_buffer'));
+              }
+              else{
+                this.ctx.bindBuffer(target, null);
+              }
+            } 
+            break;
+          case 'bindVertexArray':
+            if (this.ctx){
+              this.bound_vao = (command.vao>=0)? this.get_vao(command.vao):null;
+              if (this.bound_vao)
+              {
+                this.ctx.bindVertexArray(this.bound_vao.get('_vao'));
+              }
+              else{
+                this.ctx.bindVertexArray(null);
+              }
+            } 
+            break;
+          case 'bufferData':
+            if (this.ctx){
+              let buf = (command.buffer>=0)? this.get_buffer(command.buffer):null;
+              if (buf){
+                buf.update_buffer(this.ctx, command);
+              }
+            }
+            break
           case 'clearColor':
             if (this.ctx) this.ctx.clearColor(command.r, command.g, command.b, command.a);
             break;
@@ -92,12 +126,13 @@ export class GLModel extends DOMWidgetModel {
               let bits = 0;
               if (command.depth) bits |= this.ctx.DEPTH_BUFFER_BIT;
               if (command.color) bits |= this.ctx.COLOR_BUFFER_BIT;
+              if (command.stencil) bits |= this.ctx.STENCIL_BUFFER_BIT;
               this.ctx.clear(bits);
             }
             break;
           case 'useProgram':
             if (this.ctx){
-              this.bound_program = this.get_program(command.program);
+              this.bound_program = (command.program>=0)? this.get_program(command.program) : null;
               if(this.bound_program)
               {
                 this.ctx.useProgram(this.bound_program.get('_program'));
@@ -107,18 +142,6 @@ export class GLModel extends DOMWidgetModel {
                 this.ctx.useProgram(null);
               }
             }
-            break;
-          case 'bindVertexArray':
-            if (this.ctx){
-              this.bound_vao = this.get_vao(command.vao);
-              if (this.bound_vao)
-              {
-                this.ctx.bindVertexArray(this.bound_vao.get('_vao'));
-              }
-              else{
-                this.ctx.bindVertexArray(null);
-              }
-            } 
             break;
           case 'uniform':
             if (this.ctx && this.bound_program){
