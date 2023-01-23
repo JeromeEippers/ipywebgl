@@ -30,6 +30,7 @@ class GLViewer(DOMWidget):
         camera_pitch (float): the camera pitch angle in degree. Defaults to 0.
         mouse_speed (float): mouse speed (camera rotation speed). Defaults to 1.
         move_speed (float): move speed (camera translation speed). Defaults to 1.
+        move_keys (str): the move keys as a string. Forward, Left, Back, Right. Defaults to 'wasd'.
         shader_matrix_major (str): the type of matrix (for the ViewProjection for instance) to send to the shader {'row_major' or 'column_major'}. Defaults to 'row_major'.
     """
     _model_name = Unicode('GLModel').tag(sync=True)
@@ -46,6 +47,7 @@ class GLViewer(DOMWidget):
     camera_pitch = Float(0).tag(sync=True)
     mouse_speed = Float(1).tag(sync=True)
     move_speed = Float(1).tag(sync=True)
+    move_keys = Unicode('wasd').tag(sync=True)
     shader_matrix_major = Unicode('row_major').tag(sync=True)
 
     def __init__(self, **kwargs):

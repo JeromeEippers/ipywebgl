@@ -32,6 +32,7 @@ export class GLModel extends DOMWidgetModel {
       camera_pitch:0,
       mouse_speed:1,
       move_speed:1,
+      move_keys:'wasd',
     };
   }
 
@@ -336,20 +337,22 @@ export class GLViewer extends DOMWidgetView {
     event.preventDefault();
     event.stopPropagation();
 
+    let keys = this.model.get('move_keys');
+
     if(event.repeat == false){
-      if(event.key == 'w'){
+      if(event.key == keys[0]){
         this.move_direction[0] = true;
         this.requestRedraw();
       }
-      else if(event.key == 'a'){
+      else if(event.key == keys[1]){
         this.move_direction[1] = true;
         this.requestRedraw();
       }
-      else if(event.key == 's'){
+      else if(event.key == keys[2]){
         this.move_direction[2] = true;
         this.requestRedraw();
       }
-      else if(event.key == 'd'){
+      else if(event.key == keys[3]){
         this.move_direction[3] = true;
         this.requestRedraw();
       }
@@ -360,16 +363,18 @@ export class GLViewer extends DOMWidgetView {
     event.preventDefault();
     event.stopPropagation();
 
-    if(event.key == 'w'){
+    let keys = this.model.get('move_keys');
+
+    if(event.key == keys[0]){
       this.move_direction[0] = false;
     }
-    else if(event.key == 'a'){
+    else if(event.key == keys[1]){
       this.move_direction[1] = false;
     }
-    else if(event.key == 's'){
+    else if(event.key == keys[2]){
       this.move_direction[2] = false;
     }
-    else if(event.key == 'd'){
+    else if(event.key == keys[3]){
       this.move_direction[3] = false;
     }
   }
