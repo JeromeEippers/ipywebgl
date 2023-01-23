@@ -9,7 +9,7 @@ import { MODULE_NAME, MODULE_VERSION } from './version';
 import { GLProgram } from './glprogram';
 import { GLBuffer } from './glbuffer';
 import { GLVertexArray } from './glvertexarray';
-import { m4dot, m4getColumnI, m4getColumnK, m4inverse, m4ProjectionMatrix, m4Translation, m4Xrotation, m4Yrotation, vec3Add, vec3Scale } from './matrix';
+import { m4dot, m4getColumnI, m4getColumnK, m4inverse, m4ProjectionMatrix, m4Translation, m4Transpose, m4Xrotation, m4Yrotation, vec3Add, vec3Scale } from './matrix';
 import { buffer_to_array } from './arraybuffer';
 import { convert_buffer_target } from './glbufferhelper';
 
@@ -24,11 +24,14 @@ export class GLModel extends DOMWidgetModel {
       _view_name: 'GLViewer',
       _view_module: MODULE_NAME,
       _view_module_version: MODULE_VERSION,
+      shader_matrix_major:'row_major',
       width:700,
       height:500,
       camera_pos:[0,50,200],
       camera_yaw:0,
       camera_pitch:0,
+      mouse_speed:1,
+      move_speed:1,
     };
   }
 
@@ -47,6 +50,7 @@ export class GLModel extends DOMWidgetModel {
 
     this.resizeCanvas();
     this.on_some_change(['width', 'height'], this.resizeCanvas, this);
+    this.on_some_change(['camera_pos', 'camera_yaw', 'camera_pitch'], this.run_commands, this);
 
     this.on('msg:custom', this.handle_custom_messages, this);
 
@@ -81,7 +85,8 @@ export class GLModel extends DOMWidgetModel {
   run_commands(){
     this.update_camera();
     this.view_proj_matrix = m4dot(this.projection_matrix, this.view_matrix);
-    const view_proj_f32 = new Float32Array(this.view_proj_matrix);
+    let vp = (this.get('shader_matrix_major')=='row_major')? m4Transpose(this.view_proj_matrix): this.view_proj_matrix;
+    const view_proj_f32 = new Float32Array(vp);
     this.commands.forEach((command:any)=>{
         switch (command.cmd) {
           case 'bindBuffer':
@@ -269,20 +274,21 @@ export class GLViewer extends DOMWidgetView {
     // update movement if needed
     if (this.move_direction[0] || this.move_direction[1] || this.move_direction[2] || this.move_direction[3])
     {
+      let speed = this.model.get('move_speed');
       let forward_axis = m4getColumnK(this.model.camera_matrix);
       let side_axis = m4getColumnI(this.model.camera_matrix);
       let camera_pos = this.model.get('camera_pos');
       if (this.move_direction[0]){
-        camera_pos = vec3Add(camera_pos, vec3Scale(forward_axis, -0.5));
+        camera_pos = vec3Add(camera_pos, vec3Scale(forward_axis, -speed));
       }
       if (this.move_direction[2]){
-        camera_pos = vec3Add(camera_pos, vec3Scale(forward_axis, 0.5));
+        camera_pos = vec3Add(camera_pos, vec3Scale(forward_axis, speed));
       }
       if (this.move_direction[1]){
-        camera_pos = vec3Add(camera_pos, vec3Scale(side_axis, -0.5));
+        camera_pos = vec3Add(camera_pos, vec3Scale(side_axis, -speed));
       }
       if (this.move_direction[3]){
-        camera_pos = vec3Add(camera_pos, vec3Scale(side_axis, 0.5));
+        camera_pos = vec3Add(camera_pos, vec3Scale(side_axis, speed));
       }
       this.model.set('camera_pos', camera_pos);
       this.touch();
@@ -304,8 +310,9 @@ export class GLViewer extends DOMWidgetView {
   private onMouseMove(event: MouseEvent) {
     //this.model.send({ event: 'mouse_move', ...this.getCoordinates(event) }, {});
     if(this.is_mouse_down){
-      this.model.set('camera_yaw', this.model.get('camera_yaw')-(event.movementX)*0.2);
-      this.model.set('camera_pitch', this.model.get('camera_pitch')-(event.movementY)*0.2);
+      let speed = this.model.get('mouse_speed');
+      this.model.set('camera_yaw', this.model.get('camera_yaw')-(event.movementX)*0.2*speed);
+      this.model.set('camera_pitch', this.model.get('camera_pitch')-(event.movementY)*0.2*speed);
       this.touch();
       this.requestRedraw();
     }

@@ -1,5 +1,5 @@
 from ipywidgets import DOMWidget, Widget, register, widget_serialization
-from traitlets import Unicode, Int, Bool, validate, TraitError, Instance, List
+from traitlets import Unicode, Float, Int, Bool, validate, TraitError, Instance, List
 
 import numpy as np
 
@@ -16,7 +16,7 @@ class GLViewer(DOMWidget):
     This widget is in charge of creating the canvas, the webgl context and all the opengl resources you will need.
 
     It also manage the mouse and keyboard interaction with the widget to move the camera around.
-    For the camera to work, by default the viewer will update the uniform mat4 ViewProjection if you have defined it in your shader code. (warning : all matrices are column major even in the shaders.)
+    For the camera to work, by default the viewer will update the uniform mat4 ViewProjection if you have defined it in your shader code.
 
     All OpenGL commands are sent through this widget.
 
@@ -25,6 +25,12 @@ class GLViewer(DOMWidget):
     Attributes:
         width (int): the width of the canvas. Defaults to 640.
         height (int): the height of the canvas. Defaults to 480.
+        camera_pos ([float, float, float]): the camera position in the scene. Defaults to [0,50,200].
+        camera_yaw (float): the camera yaw angle in degree. Defaults to 0.
+        camera_pitch (float): the camera pitch angle in degree. Defaults to 0.
+        mouse_speed (float): mouse speed (camera rotation speed). Defaults to 1.
+        move_speed (float): move speed (camera translation speed). Defaults to 1.
+        shader_matrix_major (str): the type of matrix (for the ViewProjection for instance) to send to the shader {'row_major' or 'column_major'}. Defaults to 'row_major'.
     """
     _model_name = Unicode('GLModel').tag(sync=True)
     _model_module = Unicode(module_name).tag(sync=True)
@@ -35,6 +41,12 @@ class GLViewer(DOMWidget):
 
     width = Int(640).tag(sync=True)
     height = Int(480).tag(sync=True)
+    camera_pos = List([0,50,200]).tag(sync=True)
+    camera_yaw = Float(0).tag(sync=True)
+    camera_pitch = Float(0).tag(sync=True)
+    mouse_speed = Float(1).tag(sync=True)
+    move_speed = Float(1).tag(sync=True)
+    shader_matrix_major = Unicode('row_major').tag(sync=True)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
