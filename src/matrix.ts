@@ -2,7 +2,6 @@ export function m4ProjectionMatrix(fov_y: number, aspect_ratio: number, near: nu
     const ymax = near * Math.tan(fov_y * Math.PI / 360.0)
     const xmax = ymax * aspect_ratio
 
-    //flip Y for notebook
     return frustrum(-xmax, xmax, -ymax, ymax, near, far)
 }
 
