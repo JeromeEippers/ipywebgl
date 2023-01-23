@@ -14,10 +14,6 @@ To get started with ipywebgl, install with pip::
 
     pip install ipywebgl
 
-or with conda::
-
-    conda install ipywebgl
-
 
 Contents
 --------

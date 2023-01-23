@@ -22,7 +22,7 @@ class GLBufferWidget(DOMWidget):
     def update(self, target='array_buffer', src_data=None, usage='static_draw'):
         """update the buffer data
 
-        This call will also bind the buffer before calling bufferData. Be carefull if you already have bound a vertex array !
+        This call will also bind the buffer before calling bufferData.
 
         Args:
             target ({'array_buffer', 'element_array_buffer', 'copy_read_buffer', 'copy_write_buffer', 'transform_feedback_buffer', 'uniform_buffer', 'pixel_pack_buffer', 'pixel_unpack_buffer'}, optional): the binding point (target). Defaults to 'array_buffer'.
