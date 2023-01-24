@@ -152,38 +152,96 @@ export class GLVertexArray extends DOMWidgetModel{
 export class GLVertexArrayView extends DOMWidgetView {
 
     render() {
-        let maindiv = document.createElement('div');
-        maindiv.appendChild(document.createTextNode("vertex array uid : "+ String(this.model.get('uid'))));
+      let content = document.createElement('div');
+      let div = document.createElement('div');
+      content.appendChild(div);
 
-        let div = document.createElement('div');
-        maindiv.appendChild(div);
-        div.appendChild(document.createTextNode("message : " + this.model.get('message')));
+      let table:HTMLTableElement = document.createElement('table');
+      table.classList.add('ipwebgl-table');
+      div.appendChild(table);
+      
+      let tbody = table.createTBody();
+
+      let row = tbody.insertRow();
+      row.classList.add('ipwebgl-tr');
+      let typecell = row.insertCell();
+      typecell.classList.add('ipwebgl-td');
+      typecell.classList.add('ipwebgl-td-small');
+      typecell.appendChild(document.createTextNode("vertex array id : "));
+      let valuecell = row.insertCell();
+      valuecell.classList.add('ipwebgl-td');
+      valuecell.appendChild(document.createTextNode(String(this.model.get('uid'))));
+
+      row = tbody.insertRow();
+      row.classList.add('ipwebgl-tr');
+      typecell = row.insertCell();
+      typecell.classList.add('ipwebgl-td');
+      typecell.classList.add('ipwebgl-td-small');
+      typecell.appendChild(document.createTextNode("message : "));
+      valuecell = row.insertCell();
+      valuecell.classList.add('ipwebgl-td');
+      valuecell.appendChild(document.createTextNode(String(this.model.get('message'))));
+
+
+
+      if(this.model.get('attributes').length > 0){
 
         div = document.createElement('div');
-        maindiv.appendChild(div);
-        let table:HTMLTableElement = document.createElement('table');
+        content.appendChild(div);
+        table = document.createElement('table');
+        table.classList.add('ipwebgl-table');
         div.appendChild(table);
-        let thead = table.createTHead().insertRow();
-        thead.insertCell().appendChild(document.createTextNode('buffer id'));
-        thead.insertCell().appendChild(document.createTextNode('attribute'));
-        thead.insertCell().appendChild(document.createTextNode('size'));
-        thead.insertCell().appendChild(document.createTextNode('type'));
-        thead.insertCell().appendChild(document.createTextNode('stride'));
-        thead.insertCell().appendChild(document.createTextNode('offset'));
 
+        row = table.createTHead().insertRow();
+        row.classList.add('ipwebgl-th');
+        valuecell = row.insertCell();
+        valuecell.classList.add('ipwebgl-td');
+        valuecell.appendChild(document.createTextNode('Buffer id'));
+        valuecell = row.insertCell();
+        valuecell.classList.add('ipwebgl-td');
+        valuecell.appendChild(document.createTextNode('Attribute'));
+        valuecell = row.insertCell();
+        valuecell.classList.add('ipwebgl-td');
+        valuecell.appendChild(document.createTextNode('Size'));
+        valuecell = row.insertCell();
+        valuecell.classList.add('ipwebgl-td');
+        valuecell.appendChild(document.createTextNode('Type'));
+        valuecell = row.insertCell();
+        valuecell.classList.add('ipwebgl-td');
+        valuecell.appendChild(document.createTextNode('Stride'));
+        valuecell = row.insertCell();
+        valuecell.classList.add('ipwebgl-td');
+        valuecell.appendChild(document.createTextNode('Offset'));
+
+        tbody = table.createTBody();
         this.model.get('attributes').forEach((buffer:any)=>{
-            buffer.attributes.forEach((attribute:any)=>{
-                let row = table.insertRow();
-                row.insertCell().appendChild(document.createTextNode(buffer.buffer_id));
-                row.insertCell().appendChild(document.createTextNode(attribute.name));
-                row.insertCell().appendChild(document.createTextNode(attribute.count));
-                row.insertCell().appendChild(document.createTextNode(attribute.type_name));
-                row.insertCell().appendChild(document.createTextNode(buffer.stride));
-                row.insertCell().appendChild(document.createTextNode(attribute.offset));
-            });
+          buffer.attributes.forEach((attribute:any)=>{
+            row = tbody.insertRow();
+            row.classList.add('ipwebgl-tr');
+            valuecell = row.insertCell();
+            valuecell.classList.add('ipwebgl-td');
+            valuecell.appendChild(document.createTextNode(buffer.buffer_id));
+            valuecell = row.insertCell();
+            valuecell.classList.add('ipwebgl-td');
+            valuecell.appendChild(document.createTextNode(attribute.name));
+            valuecell = row.insertCell();
+            valuecell.classList.add('ipwebgl-td');
+            valuecell.appendChild(document.createTextNode(attribute.count));
+            valuecell = row.insertCell();
+            valuecell.classList.add('ipwebgl-td');
+            valuecell.appendChild(document.createTextNode(attribute.type_name));
+            valuecell = row.insertCell();
+            valuecell.classList.add('ipwebgl-td');
+            valuecell.appendChild(document.createTextNode(buffer.stride));
+            valuecell = row.insertCell();
+            valuecell.classList.add('ipwebgl-td');
+            valuecell.appendChild(document.createTextNode(attribute.offset));
+            
+          });
         });
+      }
 
-      this.el.appendChild(maindiv);
+      this.el.appendChild(content);
     }
   }
   

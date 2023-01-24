@@ -1,4 +1,29 @@
-.custom-widget {
-  background-color: lightseagreen;
-  padding: 0px 2px;
+.ipwebgl-table {
+  border-collapse: collapse;
+  vertical-align: middle;
+  width: 100%;
+}
+
+.ipwebgl-tr:nth-child(even) {
+  background-color: #e4e4e4;
+}
+.ipwebgl-tr {
+  background-color: #c5c5c5;
+}
+
+.ipwebgl-td {
+  padding-left: 20px;
+  padding-right: 20px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+.ipwebgl-td-small {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.ipwebgl-th {
+  background-color: black;
+  color: white;
 }

@@ -10,6 +10,9 @@ import { MODULE_NAME, MODULE_VERSION } from './version';
 import { buffer_to_array } from './arraybuffer';
 import { convert_buffer_target, convert_usage } from './glbufferhelper';
 
+// Import the CSS
+import '../css/widget.css';
+
 export class GLBuffer extends DOMWidgetModel{
     defaults() {
       return {
@@ -85,10 +88,26 @@ export class GLBuffer extends DOMWidgetModel{
 export class GLBufferView extends DOMWidgetView {
 
     render() {
-        let maindiv = document.createElement('div');
-        maindiv.appendChild(document.createTextNode("buffer uid : "+ String(this.model.get('uid'))));
+        let content = document.createElement('div');
 
-      this.el.appendChild(maindiv);
+        let table:HTMLTableElement = document.createElement('table');
+        table.classList.add('ipwebgl-table');
+        content.appendChild(table);
+        
+        let tbody = table.createTBody();
+        let row = tbody.insertRow();
+
+        row.classList.add('ipwebgl-tr');
+        let typecell = row.insertCell();
+        typecell.classList.add('ipwebgl-td');
+        typecell.classList.add('ipwebgl-td-small');
+        typecell.appendChild(document.createTextNode("buffer id : "));
+
+        let valuecell = row.insertCell();
+        valuecell.classList.add('ipwebgl-td');
+        valuecell.appendChild(document.createTextNode(String(this.model.get('uid'))));
+
+        this.el.appendChild(content);
     }
   }
   

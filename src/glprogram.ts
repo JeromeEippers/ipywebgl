@@ -232,40 +232,104 @@ export class GLProgram extends DOMWidgetModel{
 export class GLProgramView extends DOMWidgetView {
 
     render() {
-        let maindiv = document.createElement('div');
-        maindiv.appendChild(document.createTextNode("program uid : "+ String(this.model.get('uid'))));
-
+        let content = document.createElement('div');
         let div = document.createElement('div');
-        maindiv.appendChild(div);
-        div.appendChild(document.createTextNode("ready : " + String(this.model.get('ready'))));
+        content.appendChild(div);
 
-        div = document.createElement('div');
-        maindiv.appendChild(div);
-        div.appendChild(document.createTextNode("program message : " + this.model.get('program_message')));
-
-        div = document.createElement('div');
-        maindiv.appendChild(div);
-        div.appendChild(document.createTextNode("vertex shader : " + this.model.get('vertex_shader_message')));
-
-        div = document.createElement('div');
-        maindiv.appendChild(div);
-        div.appendChild(document.createTextNode("fragment shader : " + this.model.get('pixel_shader_message')));
-
-        div = document.createElement('div');
-        maindiv.appendChild(div);
         let table:HTMLTableElement = document.createElement('table');
+        table.classList.add('ipwebgl-table');
         div.appendChild(table);
-        let thead = table.createTHead().insertRow();
-        thead.insertCell().appendChild(document.createTextNode('uniform'));
-        thead.insertCell().appendChild(document.createTextNode('location'));
+        
+        let tbody = table.createTBody();
 
-        this.model.get('_uniforms').forEach((element:any)=>{
-          let row = table.insertRow();
-          row.insertCell().appendChild(document.createTextNode(element.name));
-          row.insertCell().appendChild(document.createTextNode(element.location));
-        });
+        let row = tbody.insertRow();
+        row.classList.add('ipwebgl-tr');
+        let typecell = row.insertCell();
+        typecell.classList.add('ipwebgl-td');
+        typecell.classList.add('ipwebgl-td-small');
+        typecell.appendChild(document.createTextNode("program id : "));
+        let valuecell = row.insertCell();
+        valuecell.classList.add('ipwebgl-td');
+        valuecell.appendChild(document.createTextNode(String(this.model.get('uid'))));
 
-      this.el.appendChild(maindiv);
+        row = tbody.insertRow();
+        row.classList.add('ipwebgl-tr');
+        typecell = row.insertCell();
+        typecell.classList.add('ipwebgl-td');
+        typecell.classList.add('ipwebgl-td-small');
+        typecell.appendChild(document.createTextNode("ready : "));
+        valuecell = row.insertCell();
+        valuecell.classList.add('ipwebgl-td');
+        valuecell.appendChild(document.createTextNode(String(this.model.get('ready'))));
+
+        row = tbody.insertRow();
+        row.classList.add('ipwebgl-tr');
+        typecell = row.insertCell();
+        typecell.classList.add('ipwebgl-td');
+        typecell.classList.add('ipwebgl-td-small');
+        typecell.appendChild(document.createTextNode("program message : "));
+        valuecell = row.insertCell();
+        valuecell.classList.add('ipwebgl-td');
+        valuecell.appendChild(document.createTextNode(String(this.model.get('program_message'))));
+
+        row = tbody.insertRow();
+        row.classList.add('ipwebgl-tr');
+        typecell = row.insertCell();
+        typecell.classList.add('ipwebgl-td');
+        typecell.classList.add('ipwebgl-td-small');
+        typecell.appendChild(document.createTextNode("vertex shader : "));
+        valuecell = row.insertCell();
+        valuecell.classList.add('ipwebgl-td');
+        valuecell.appendChild(document.createTextNode(String(this.model.get('vertex_shader_message'))));
+
+        row = tbody.insertRow();
+        row.classList.add('ipwebgl-tr');
+        typecell = row.insertCell();
+        typecell.classList.add('ipwebgl-td');
+        typecell.classList.add('ipwebgl-td-small');
+        typecell.appendChild(document.createTextNode("fragment shader : "));
+        valuecell = row.insertCell();
+        valuecell.classList.add('ipwebgl-td');
+        valuecell.appendChild(document.createTextNode(String(this.model.get('pixel_shader_message'))));
+
+
+        if(this.model.get('_uniforms').length > 0){
+
+          div = document.createElement('div');
+          content.appendChild(div);
+          table = document.createElement('table');
+          table.classList.add('ipwebgl-table');
+          div.appendChild(table);
+
+          row = table.createTHead().insertRow();
+          row.classList.add('ipwebgl-th');
+          valuecell = row.insertCell();
+          valuecell.classList.add('ipwebgl-td');
+          valuecell.appendChild(document.createTextNode('Uniform'));
+          valuecell = row.insertCell();
+          valuecell.classList.add('ipwebgl-td');
+          valuecell.appendChild(document.createTextNode('Location'));
+
+          tbody = table.createTBody();
+          this.model.get('_uniforms').forEach((element:any)=>{
+            row = tbody.insertRow();
+            row.classList.add('ipwebgl-tr');
+            valuecell = row.insertCell();
+            valuecell.classList.add('ipwebgl-td');
+            valuecell.appendChild(document.createTextNode(element.name));
+            valuecell = row.insertCell();
+            valuecell.classList.add('ipwebgl-td');
+            if (element.location){
+              valuecell.appendChild(document.createTextNode('found'));
+            }
+            else{
+              valuecell.appendChild(document.createTextNode('not used'));
+            }
+            
+          });
+        }
+
+        this.el.appendChild(content);
     }
   }
   
