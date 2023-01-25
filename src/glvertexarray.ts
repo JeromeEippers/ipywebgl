@@ -57,6 +57,9 @@ export class GLVertexArray extends DOMWidgetModel{
             case 'bind':
               this.bind_buffer(msg.program, msg.buffers);
               break;
+            case 'bindIndex':
+              this.bind_index(msg.buffer, msg.srcData);
+              break;
         }
     }
     
@@ -146,6 +149,15 @@ export class GLVertexArray extends DOMWidgetModel{
       ctx.bindVertexArray(null);
       ctx.bindBuffer(ctx.ARRAY_BUFFER, null);
       return true;
+    }
+
+    bind_index(buffer_id:number, srcData:any){
+      let ctx:WebGL2RenderingContext = this.get('_glmodel').ctx;
+      ctx.bindVertexArray(this.get('_vao'));
+      let buffer:GLBuffer = this.get('_glmodel').get_buffer(buffer_id);
+      ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, buffer.get('_buffer'));
+      buffer.update_buffer(ctx, {target:"element_array_buffer", usage:"static_draw", srcData:srcData});
+      ctx.bindVertexArray(null);
     }
 }
   

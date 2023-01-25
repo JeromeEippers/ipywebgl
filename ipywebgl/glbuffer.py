@@ -23,6 +23,9 @@ class GLBufferWidget(DOMWidget):
         """update the buffer data
 
         This call will also bind the buffer before calling bufferData.
+        So be carrefull if you do an 'element_array_buffer' manually, you will need to have a vertex array bound first. (and that might be tricky to unsure when using this update method)
+
+        If you need to update a buffer during rendering, use the buffer_data method on the GLViewer.
 
         Args:
             target ({'array_buffer', 'element_array_buffer', 'copy_read_buffer', 'copy_write_buffer', 'transform_feedback_buffer', 'uniform_buffer', 'pixel_pack_buffer', 'pixel_unpack_buffer'}, optional): the binding point (target). Defaults to 'array_buffer'.

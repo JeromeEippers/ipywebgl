@@ -181,6 +181,32 @@ export class GLModel extends DOMWidgetModel {
             this.ctx.drawArrays(gltype, command.first, command.count);
           }
           break;
+          case 'drawElements':
+            if (this.ctx){
+            let gltype = this.ctx.TRIANGLES;
+            switch (command.mode){
+              case 'triangles':
+                gltype = this.ctx.TRIANGLES; break;
+              case 'triangle_fan':
+                gltype = this.ctx.TRIANGLE_FAN; break;
+              case 'triangle_strip':
+                gltype = this.ctx.TRIANGLE_STRIP; break;
+              case 'points':
+                gltype = this.ctx.POINTS; break;
+              case 'lines':
+                gltype = this.ctx.LINES; break;
+              case 'line_strip':
+                gltype = this.ctx.LINE_STRIP; break;
+              case 'line_loop':
+                gltype = this.ctx.LINE_LOOP; break;
+            }
+            let datatype = this.ctx.UNSIGNED_BYTE;
+            if (command.type == 'uint16'){
+              datatype = this.ctx.UNSIGNED_SHORT;
+            }
+            this.ctx.drawElements(gltype, command.count, datatype, command.offset);
+          }
+          break;
         }
     });
   }

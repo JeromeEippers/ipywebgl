@@ -188,6 +188,17 @@ class GLViewer(DOMWidget):
         """
         self.commands.append({'cmd':'drawArrays', 'type':draw_type, 'first':first, 'count':count})
 
+    def draw_elements(self, mode:str, count:int, type:str, offset:int):
+        """Append a drawElements command to the commands buffer
+
+        Args:
+            mode ({'triangles', 'triangle_fan', 'triangle_strip', 'points', 'lines', 'line_strip', 'line_loop'}): type of drawing operation.
+            count (int): specifying the number of elements of the bound element array buffer to be rendered.
+            type ({'uint8', 'uint16'}): type of data in the index buffer.
+            offset (int): a byte offset in the element array buffer. Must be a valid multiple of the size of the given type.
+        """
+        self.commands.append({'cmd':'drawElements', 'mode':mode, 'count':count, 'type':type, 'offset':offset})
+
 
     def use_program(self, program:GLProgramWidget=None):
         """Append a useProgram command to the commands buffer.
