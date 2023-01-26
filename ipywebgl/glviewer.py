@@ -177,6 +177,70 @@ class GLViewer(DOMWidget):
         """
         self.commands.append({'cmd':'clear', 'depth':color_bit_buffer, 'color':depth_buffer_bit, 'stencil':stencil_buffer_bit})
 
+    def cull_face(self, mode='back'):
+        """Append a cullFace command to the commands buffer
+
+        Polygon culling is disabled by default. To enable or disable culling, use the enable().
+
+        Args:
+            mode ({'front', 'back', 'front_and_back'}, optional): specifying whether front- or back-facing polygons are candidates for culling. Defaults to 'back'.
+        """
+        self.commands.append({'cmd':'cullFace', 'mode':mode})
+
+    def depth_func(self, func='less'):
+        """Append a depthFunc command to the commands buffer
+
+         specifying the depth comparison function, which sets the conditions under which the pixel will be drawn.
+        
+        Args:
+            mode ({'never', 'less', 'equal', 'lequal', 'greater', 'notequal', 'gequal', 'always'}, optional): Defaults to 'less'.
+        """
+        self.commands.append({'cmd':'depthFunc', 'func':func})
+
+    def depth_mask(self, flag=True):
+        """Append a depthMask command to the commands buffer.
+
+        Args:
+            flag (bool, optional): specifying whether or not writing into the depth buffer is enabled. Defaults to True.
+        """
+        self.commands.append({'cmd':'depthMask', 'flag':flag})
+
+    def depth_range(self, z_near=0.0, z_far=1.0):
+        """Append a depthRange command to the commands buffer.
+
+        Args:
+            z_near (float, optional): specifying the mapping of the near clipping plane to window or viewport coordinates. Clamped to the range 0 to 1 and must be less than or equal to z_far. Defaults to 0.0.
+            z_far (float, optional): specifying the mapping of the far clipping plane to window or viewport coordinates. Clamped to the range 0 to 1. Defaults to 1.0.
+        """
+        self.commands.append({'cmd':'depthRange', 'z_near':z_near, 'z_far':z_far})
+
+    def disable(self, blend=False, cull_face=False, depth_test=False, dither=False, polygon_offset_fill=False, sample_alpha_to_coverage=False, sample_coverage=False, scissor_test=False, stencil_test=False, rasterizer_discard=False):
+        """Append a disable command to the commands buffer
+
+        Args:
+            blend (bool, optional): Deactivates  blending of the computed fragment color values. Defaults to False.
+            cull_face (bool, optional): Deactivates  culling of polygons. Defaults to False.
+            depth_test (bool, optional): Deactivates  depth comparisons and updates to the depth buffer. Defaults to False.
+            dither (bool, optional): Deactivates  dithering of color components before they get written to the color buffer. Defaults to False.
+            polygon_offset_fill (bool, optional): Deactivates  adding an offset to depth values of polygon's fragments. Defaults to False.
+            sample_alpha_to_coverage (bool, optional): Deactivates  ates the computation of a temporary coverage value determined by the alpha value. Defaults to False.
+            sample_coverage (bool, optional): Deactivates  ANDing the fragment's coverage with the temporary coverage value. Defaults to False.
+            scissor_test (bool, optional): Deactivates  the scissor test that discards fragments that are outside of the scissor rectangle. Defaults to False.
+            stencil_test (bool, optional): Deactivates  stencil testing and updates to the stencil buffer. Defaults to False.
+            rasterizer_discard (bool, optional): Deactivates that primitives are discarded immediately before the rasterization stage, but after the optional transform feedback stage. Defaults to False.
+        """
+        self.commands.append({'cmd':'disable', 
+        'blend':blend,
+        'cull_face':cull_face,
+        'depth_test':depth_test,
+        'dither':dither,
+        'polygon_offset_fill':polygon_offset_fill,
+        'sample_alpha_to_coverage':sample_alpha_to_coverage,
+        'sample_coverage':sample_coverage,
+        'scissor_test':scissor_test,
+        'stencil_test':stencil_test,
+        'rasterizer_discard':rasterizer_discard
+        })
 
     def draw_arrays(self, draw_type:str, first:int, count:int):
         """Append a drawArrays command to the commands buffer
@@ -199,6 +263,41 @@ class GLViewer(DOMWidget):
         """
         self.commands.append({'cmd':'drawElements', 'mode':mode, 'count':count, 'type':type, 'offset':offset})
 
+    def enable(self, blend=False, cull_face=False, depth_test=False, dither=False, polygon_offset_fill=False, sample_alpha_to_coverage=False, sample_coverage=False, scissor_test=False, stencil_test=False, rasterizer_discard=False):
+        """Append a enable command to the commands buffer
+
+        Args:
+            blend (bool, optional): Activates blending of the computed fragment color values. Defaults to False.
+            cull_face (bool, optional): Activates culling of polygons. Defaults to False.
+            depth_test (bool, optional): Activates depth comparisons and updates to the depth buffer. Defaults to False.
+            dither (bool, optional): Activates dithering of color components before they get written to the color buffer. Defaults to False.
+            polygon_offset_fill (bool, optional): Activates adding an offset to depth values of polygon's fragments. Defaults to False.
+            sample_alpha_to_coverage (bool, optional): Activates the computation of a temporary coverage value determined by the alpha value. Defaults to False.
+            sample_coverage (bool, optional): Activates ANDing the fragment's coverage with the temporary coverage value. Defaults to False.
+            scissor_test (bool, optional): Activates the scissor test that discards fragments that are outside of the scissor rectangle. Defaults to False.
+            stencil_test (bool, optional): Activates stencil testing and updates to the stencil buffer. Defaults to False.
+            rasterizer_discard (bool, optional): Primitives are discarded immediately before the rasterization stage, but after the optional transform feedback stage. Defaults to False.
+        """
+        self.commands.append({'cmd':'enable', 
+        'blend':blend,
+        'cull_face':cull_face,
+        'depth_test':depth_test,
+        'dither':dither,
+        'polygon_offset_fill':polygon_offset_fill,
+        'sample_alpha_to_coverage':sample_alpha_to_coverage,
+        'sample_coverage':sample_coverage,
+        'scissor_test':scissor_test,
+        'stencil_test':stencil_test,
+        'rasterizer_discard':rasterizer_discard
+        })
+
+    def front_face(self, mode='ccw'):
+        """Append a frontFace command to the commands buffer
+
+        Args:
+            mode ({'cw', 'ccw'}, optional): type winding orientation. Defaults to 'ccw'.
+        """
+        self.commands.append({'cmd':'frontFace', 'mode':mode})
 
     def use_program(self, program:GLProgramWidget=None):
         """Append a useProgram command to the commands buffer.

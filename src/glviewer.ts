@@ -83,6 +83,56 @@ export class GLModel extends DOMWidgetModel {
     this.view_matrix = m4inverse(this.camera_matrix);
   }
 
+  private get_draw_mode(gl:WebGL2RenderingContext, mode:string){
+    let gltype = gl.TRIANGLES;
+    switch (mode){
+      case 'triangles':
+        gltype = gl.TRIANGLES; break;
+      case 'triangle_fan':
+        gltype = gl.TRIANGLE_FAN; break;
+      case 'triangle_strip':
+        gltype = gl.TRIANGLE_STRIP; break;
+      case 'points':
+        gltype = gl.POINTS; break;
+      case 'lines':
+        gltype = gl.LINES; break;
+      case 'line_strip':
+        gltype = gl.LINE_STRIP; break;
+      case 'line_loop':
+        gltype = gl.LINE_LOOP; break;
+    }
+    return gltype;
+  }
+
+  private get_caps(gl:WebGL2RenderingContext, command:any){
+    let cap = 0;
+    if (command.blend) cap |= gl.BLEND;
+    if (command.depth_test) cap |= gl.DEPTH;
+    if (command.dither) cap |= gl.DITHER;
+    if (command.polygon_offset_fill) cap |= gl.POLYGON_OFFSET_FILL;
+    if (command.sample_alpha_to_coverage) cap |= gl.SAMPLE_ALPHA_TO_COVERAGE;
+    if (command.sample_coverage) cap |= gl.SAMPLE_COVERAGE;
+    if (command.scissor_test) cap |= gl.SCISSOR_TEST;
+    if (command.stencil_test) cap |= gl.STENCIL_TEST;
+    if (command.rasterizer_discard) cap |= gl.RASTERIZER_DISCARD;
+    return cap;
+  }
+
+  private get_depth_func(gl:WebGL2RenderingContext, func:String){
+    let df = gl.LESS;
+    switch(func){
+      case 'less': break;
+      case 'never': df = gl.NEVER; break;
+      case 'equal': df = gl.EQUAL; break;
+      case 'lequal': df = gl.LEQUAL; break;
+      case 'greater': df = gl.GREATER; break;
+      case 'notequal': df = gl.NOTEQUAL; break;
+      case 'gequal': df = gl.GEQUAL; break;
+      case 'always': df = gl.ALWAYS; break;
+    }
+    return df
+  }
+
   run_commands(){
     this.update_camera();
     this.view_proj_matrix = m4dot(this.projection_matrix, this.view_matrix);
@@ -136,6 +186,37 @@ export class GLModel extends DOMWidgetModel {
               this.ctx.clear(bits);
             }
             break;
+          case 'cullFace':
+            if (this.ctx) 
+            {
+              let cull = this.ctx.BACK;
+              if (command.mode == 'front') cull = this.ctx.FRONT;
+              if (command.mode == 'front_and_back') cull = this.ctx.FRONT_AND_BACK;
+              this.ctx.cullFace(cull);
+            }
+            break;
+          case 'enable':
+            if (this.ctx) this.ctx.enable(this.get_caps(this.ctx, command));
+            break;
+          case 'depthFunc':
+            if (this.ctx) 
+            {
+              let func = this.get_depth_func(this.ctx, command.func);
+              this.ctx.depthFunc(func);
+            }
+            break;
+          case 'depthMask':
+            if (this.ctx) this.ctx.depthMask(command.flag);
+            break;
+          case 'depthRange':
+            if (this.ctx) this.ctx.depthRange(command.z_near, command.z_far);
+            break;
+          case 'disable':
+            if (this.ctx) this.ctx.disable(this.get_caps(this.ctx, command));
+            break;
+          case 'frontFace':
+            if (this.ctx) this.ctx.frontFace((command.mode == 'cw')? this.ctx.CW : this.ctx.CCW);
+            break;
           case 'useProgram':
             if (this.ctx){
               this.bound_program = (command.program>=0)? this.get_program(command.program) : null;
@@ -161,45 +242,13 @@ export class GLModel extends DOMWidgetModel {
             break;
           case 'drawArrays':
             if (this.ctx){
-            let gltype = this.ctx.TRIANGLES;
-            switch (command.type){
-              case 'triangles':
-                gltype = this.ctx.TRIANGLES; break;
-              case 'triangle_fan':
-                gltype = this.ctx.TRIANGLE_FAN; break;
-              case 'triangle_strip':
-                gltype = this.ctx.TRIANGLE_STRIP; break;
-              case 'points':
-                gltype = this.ctx.POINTS; break;
-              case 'lines':
-                gltype = this.ctx.LINES; break;
-              case 'line_strip':
-                gltype = this.ctx.LINE_STRIP; break;
-              case 'line_loop':
-                gltype = this.ctx.LINE_LOOP; break;
-            }
+            let gltype = this.get_draw_mode(this.ctx, command.type);
             this.ctx.drawArrays(gltype, command.first, command.count);
           }
           break;
           case 'drawElements':
             if (this.ctx){
-            let gltype = this.ctx.TRIANGLES;
-            switch (command.mode){
-              case 'triangles':
-                gltype = this.ctx.TRIANGLES; break;
-              case 'triangle_fan':
-                gltype = this.ctx.TRIANGLE_FAN; break;
-              case 'triangle_strip':
-                gltype = this.ctx.TRIANGLE_STRIP; break;
-              case 'points':
-                gltype = this.ctx.POINTS; break;
-              case 'lines':
-                gltype = this.ctx.LINES; break;
-              case 'line_strip':
-                gltype = this.ctx.LINE_STRIP; break;
-              case 'line_loop':
-                gltype = this.ctx.LINE_LOOP; break;
-            }
+            let gltype = this.get_draw_mode(this.ctx, command.mode);
             let datatype = this.ctx.UNSIGNED_BYTE;
             if (command.type == 'uint16'){
               datatype = this.ctx.UNSIGNED_SHORT;
