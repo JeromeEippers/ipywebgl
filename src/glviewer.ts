@@ -6,12 +6,9 @@ import {
 
 import { MODULE_NAME, MODULE_VERSION } from './version';
 
-import { GLProgram } from './glprogram';
-import { GLBuffer } from './glbuffer';
-import { GLVertexArray } from './glvertexarray';
 import { m4dot, m4getColumnI, m4getColumnK, m4inverse, m4ProjectionMatrix, m4Translation, m4Transpose, m4Xrotation, m4Yrotation, vec3Add, vec3Scale } from './matrix';
+import { GLResource } from './glresource';
 import { buffer_to_array } from './arraybuffer';
-import { convert_buffer_target } from './glbufferhelper';
 
 
 export class GLModel extends DOMWidgetModel {
@@ -68,8 +65,34 @@ export class GLModel extends DOMWidgetModel {
     this.projection_matrix = m4ProjectionMatrix(50.0, this.get('width')/this.get('height'), 1.0, 5000.0);
   }
 
-  handle_custom_messages(commands: any) {
-    this.commands = commands;
+  handle_custom_messages(command: any, buffers:any) {
+    if(command.clear == true){
+      this.commands = [];
+      this.buffers = [];
+    }
+    let commands = command.commands;
+    let converted_buffers:any[] = [];
+    commands.forEach((element:any)=>{
+      if (element.hasOwnProperty('buffer_metadata')) {
+        const converted = buffer_to_array(element.buffer_metadata.dtype, buffers[element.buffer_metadata.index].buffer);
+        converted_buffers.push(converted);
+      }
+    });
+
+    if(command.only_once == true){
+      this.execute_commands(commands, converted_buffers);
+    }
+    else{
+      let buffer_id_offset = this.buffers.length;
+      this.buffers = this.buffers.concat(converted_buffers);
+      commands.forEach((element:any)=>{
+        if (element.hasOwnProperty('buffer_metadata')) {
+          element.buffer_metadata.index += buffer_id_offset;
+        }
+      });
+      this.commands = this.commands.concat(commands);
+    }
+
     this.run_commands();
   }
 
@@ -83,230 +106,424 @@ export class GLModel extends DOMWidgetModel {
     this.view_matrix = m4inverse(this.camera_matrix);
   }
 
-  private get_draw_mode(gl:WebGL2RenderingContext, mode:string){
-    let gltype = gl.TRIANGLES;
-    switch (mode){
-      case 'triangles':
-        gltype = gl.TRIANGLES; break;
-      case 'triangle_fan':
-        gltype = gl.TRIANGLE_FAN; break;
-      case 'triangle_strip':
-        gltype = gl.TRIANGLE_STRIP; break;
-      case 'points':
-        gltype = gl.POINTS; break;
-      case 'lines':
-        gltype = gl.LINES; break;
-      case 'line_strip':
-        gltype = gl.LINE_STRIP; break;
-      case 'line_loop':
-        gltype = gl.LINE_LOOP; break;
-    }
-    return gltype;
-  }
-
-  private get_caps(gl:WebGL2RenderingContext, command:any){
-    let cap = 0;
-    if (command.blend) cap |= gl.BLEND;
-    if (command.depth_test) cap |= gl.DEPTH;
-    if (command.dither) cap |= gl.DITHER;
-    if (command.polygon_offset_fill) cap |= gl.POLYGON_OFFSET_FILL;
-    if (command.sample_alpha_to_coverage) cap |= gl.SAMPLE_ALPHA_TO_COVERAGE;
-    if (command.sample_coverage) cap |= gl.SAMPLE_COVERAGE;
-    if (command.scissor_test) cap |= gl.SCISSOR_TEST;
-    if (command.stencil_test) cap |= gl.STENCIL_TEST;
-    if (command.rasterizer_discard) cap |= gl.RASTERIZER_DISCARD;
-    return cap;
-  }
-
-  private get_depth_func(gl:WebGL2RenderingContext, func:String){
-    let df = gl.LESS;
-    switch(func){
-      case 'less': break;
-      case 'never': df = gl.NEVER; break;
-      case 'equal': df = gl.EQUAL; break;
-      case 'lequal': df = gl.LEQUAL; break;
-      case 'greater': df = gl.GREATER; break;
-      case 'notequal': df = gl.NOTEQUAL; break;
-      case 'gequal': df = gl.GEQUAL; break;
-      case 'always': df = gl.ALWAYS; break;
-    }
-    return df
-  }
-
   run_commands(){
+    this.execute_commands(this.commands, this.buffers);
+  }
+
+  execute_commands(commands:any[], converted_buffers:any[]){
+    if (this.ctx == null) return;
+    const gl:WebGL2RenderingContext = this.ctx;
+
     this.update_camera();
     this.view_proj_matrix = m4dot(this.projection_matrix, this.view_matrix);
     let vp = (this.get('shader_matrix_major')=='row_major')? m4Transpose(this.view_proj_matrix): this.view_proj_matrix;
     const view_proj_f32 = new Float32Array(vp);
-    this.commands.forEach((command:any)=>{
-        switch (command.cmd) {
-          case 'bindBuffer':
-            if (this.ctx){
-              let buf = (command.buffer>=0)? this.get_buffer(command.buffer):null;
-              let target = convert_buffer_target(this.ctx, command.target);
-              if (buf)
-              {
-                this.ctx.bindBuffer(target, buf.get('_buffer'));
-              }
-              else{
-                this.ctx.bindBuffer(target, null);
-              }
-            } 
-            break;
-          case 'bindVertexArray':
-            if (this.ctx){
-              this.bound_vao = (command.vao>=0)? this.get_vao(command.vao):null;
-              if (this.bound_vao)
-              {
-                this.ctx.bindVertexArray(this.bound_vao.get('_vao'));
-              }
-              else{
-                this.ctx.bindVertexArray(null);
-              }
-            } 
-            break;
-          case 'bufferData':
-            if (this.ctx){
-              let buf = (command.buffer>=0)? this.get_buffer(command.buffer):null;
-              if (buf){
-                buf.update_buffer(this.ctx, command);
-              }
-            }
-            break
-          case 'clearColor':
-            if (this.ctx) this.ctx.clearColor(command.r, command.g, command.b, command.a);
-            break;
-          case 'clear':
-            if (this.ctx) 
-            {
-              let bits = 0;
-              if (command.depth) bits |= this.ctx.DEPTH_BUFFER_BIT;
-              if (command.color) bits |= this.ctx.COLOR_BUFFER_BIT;
-              if (command.stencil) bits |= this.ctx.STENCIL_BUFFER_BIT;
-              this.ctx.clear(bits);
-            }
-            break;
-          case 'cullFace':
-            if (this.ctx) 
-            {
-              let cull = this.ctx.BACK;
-              if (command.mode == 'front') cull = this.ctx.FRONT;
-              if (command.mode == 'front_and_back') cull = this.ctx.FRONT_AND_BACK;
-              this.ctx.cullFace(cull);
-            }
-            break;
-          case 'enable':
-            if (this.ctx) this.ctx.enable(this.get_caps(this.ctx, command));
-            break;
-          case 'depthFunc':
-            if (this.ctx) 
-            {
-              let func = this.get_depth_func(this.ctx, command.func);
-              this.ctx.depthFunc(func);
-            }
-            break;
-          case 'depthMask':
-            if (this.ctx) this.ctx.depthMask(command.flag);
-            break;
-          case 'depthRange':
-            if (this.ctx) this.ctx.depthRange(command.z_near, command.z_far);
-            break;
-          case 'disable':
-            if (this.ctx) this.ctx.disable(this.get_caps(this.ctx, command));
-            break;
-          case 'frontFace':
-            if (this.ctx) this.ctx.frontFace((command.mode == 'cw')? this.ctx.CW : this.ctx.CCW);
-            break;
-          case 'useProgram':
-            if (this.ctx){
-              this.bound_program = (command.program>=0)? this.get_program(command.program) : null;
-              if(this.bound_program)
-              {
-                this.ctx.useProgram(this.bound_program.get('_program'));
-                this.bound_program.setUniformMatrix(this.ctx, 'ViewProjection', [4,4], view_proj_f32);
-              }
-              else{
-                this.ctx.useProgram(null);
-              }
-            }
-            break;
-          case 'uniform':
-            if (this.ctx && this.bound_program){
-              this.bound_program.setUniform(this.ctx, command.name, command.buffer.dtype, command.buffer.shape, buffer_to_array(command.buffer));
-            }
-            break;
-          case 'uniformMatrix':
-            if (this.ctx && this.bound_program){
-              this.bound_program.setUniformMatrix(this.ctx, command.name, command.buffer.shape, buffer_to_array(command.buffer));
-            }
-            break;
-          case 'drawArrays':
-            if (this.ctx){
-            let gltype = this.get_draw_mode(this.ctx, command.type);
-            this.ctx.drawArrays(gltype, command.first, command.count);
-          }
-          break;
-          case 'drawElements':
-            if (this.ctx){
-            let gltype = this.get_draw_mode(this.ctx, command.mode);
-            let datatype = this.ctx.UNSIGNED_BYTE;
-            if (command.type == 'uint16'){
-              datatype = this.ctx.UNSIGNED_SHORT;
-            }
-            this.ctx.drawElements(gltype, command.count, datatype, command.offset);
-          }
-          break;
-        }
+
+    commands.forEach((command:any)=>{
+      this.execute_command(gl, command, converted_buffers, view_proj_f32);
     });
   }
 
-  register_program(program:GLProgram){
-    if(program.get('uid') != this.programs.length){
-      throw new Error('uid should match the list index');
+  execute_command(gl:WebGL2RenderingContext, command:any, converted_buffers:any[], view_proj:Float32Array|null){
+    switch(command.cmd){
+      case 'enable':
+      case 'disable':
+        {
+          let cap = 0;
+          if (command.blend) cap |= gl.BLEND;
+          if (command.depth_test) cap |= gl.DEPTH;
+          if (command.dither) cap |= gl.DITHER;
+          if (command.polygon_offset_fill) cap |= gl.POLYGON_OFFSET_FILL;
+          if (command.sample_alpha_to_coverage) cap |= gl.SAMPLE_ALPHA_TO_COVERAGE;
+          if (command.sample_coverage) cap |= gl.SAMPLE_COVERAGE;
+          if (command.scissor_test) cap |= gl.SCISSOR_TEST;
+          if (command.stencil_test) cap |= gl.STENCIL_TEST;
+          if (command.rasterizer_discard) cap |= gl.RASTERIZER_DISCARD;
+          if (command.cmd == 'enable'){
+            gl.enable(cap);
+          } else{
+            gl.disable(cap);
+          }
+        }
+        break;
+      case 'clearColor':
+          gl.clearColor(command.r, command.g, command.b, command.a);
+        break;
+      case 'clear':{
+        let bits = 0;
+        if (command.depth) bits |= gl.DEPTH_BUFFER_BIT;
+        if (command.color) bits |= gl.COLOR_BUFFER_BIT;
+        if (command.stencil) bits |= gl.STENCIL_BUFFER_BIT;
+        gl.clear(bits);
+      }
+      break;
+      case 'frontFace':{
+        gl.frontFace((gl as any)[command.mode]);
+      }
+      break;
+      case 'cullFace':{
+        gl.cullFace((gl as any)[command.mode]);
+      }
+      break;
+      case 'depthFunc':{
+        gl.depthFunc((gl as any)[command.func]);
+      }
+      break;
+      case 'depthMask':{
+        gl.depthMask(command.flag);
+      }
+      break;
+      case 'depthRange':{
+        gl.depthRange(command.z_near, command.z_far);
+      }
+      break;
+
+      // ------------------------------- SHADERS --------------------------------------
+      case 'createShader':{
+        let res = this.get_resource(command.resource);
+        const ptr = gl.createShader((gl as any)[command.type]);
+        res.set('_gl_ptr', ptr);
+        res.set('_info', {type:command.type});
+        res.save_changes();
+      }
+      break;
+      case 'shaderSource':{
+        const res = this.get_resource(command.shader);
+          const ptr = res.get('_gl_ptr');
+          gl.shaderSource(ptr, command.source);
+        }
+        break;
+      case 'compileShader':{
+          const res = this.get_resource(command.shader);
+          const ptr = res.get('_gl_ptr');
+          gl.compileShader(ptr);
+          let resinfo = res.get('_info');
+
+          if ( !gl.getShaderParameter(ptr, gl.COMPILE_STATUS) ) {
+            let info = gl.getShaderInfoLog( ptr );
+            resinfo.message = info;
+          }
+          else{
+            resinfo.message = 'compiled';
+          }
+          res.set('_info', resinfo);
+          res.save_changes();
+        }
+        break;
+      // ------------------------------- PROGRAMS --------------------------------------
+      case 'createProgram':{
+          let res = this.get_resource(command.resource);
+          const ptr = gl.createProgram();
+          res.set('_gl_ptr', ptr);
+          res.set('_info', {type:'Program'});
+          res.save_changes();
+        }
+        break;
+      case 'attachShader':{
+          const prog = this.get_resource(command.program).get('_gl_ptr');
+          const shader = this.get_resource(command.shader).get('_gl_ptr');
+          gl.attachShader(prog, shader);
+        }
+        break;
+      case 'bindAttribLocation':{
+          let res = this.get_resource(command.program);
+          const ptr = res.get('_gl_ptr');
+          gl.bindAttribLocation(ptr, command.index, command.name);
+        }
+        break;
+      case 'linkProgram':{
+          let res = this.get_resource(command.program);
+          const ptr = res.get('_gl_ptr');
+          gl.linkProgram(ptr);
+          gl.validateProgram(ptr);
+          let resinfo = res.get('_info');
+
+          if ( !gl.getProgramParameter( ptr, gl.LINK_STATUS) ) {
+            let info = gl.getShaderInfoLog( ptr );
+            resinfo.message = info;
+          }
+          else{
+            resinfo.message = 'linked';
+            resinfo.uniforms = [];
+            const numUniforms = gl.getProgramParameter(ptr, gl.ACTIVE_UNIFORMS);
+            for (let i = 0; i < numUniforms; ++i) {
+              const info = gl.getActiveUniform(ptr, i);
+              if (info)
+                resinfo.uniforms.push({name:info.name, type:info.type, size:info.size, location:gl.getUniformLocation(ptr, info.name)});
+            }
+            resinfo.attributes = [];
+            const numAttribute = gl.getProgramParameter(ptr, gl.ACTIVE_ATTRIBUTES);
+            for (let i = 0; i < numAttribute; ++i) {
+              const info = gl.getActiveAttrib(ptr, i);
+              if (info)
+                resinfo.attributes.push({name:info.name, type:info.type, size:info.size, location:gl.getAttribLocation(ptr, info.name)});
+            }
+          }
+          res.set('_info', resinfo);
+          res.save_changes();
+        }
+        break;
+      case 'useProgram':{
+          if(command.program >= 0){
+            const res = this.get_resource(command.program);
+            const ptr = res.get('_gl_ptr');
+            gl.useProgram(ptr);
+            this.bound_program = res;
+
+            //by default we can push the view projection on the program
+            this.execute_command(gl, {cmd:'uniformMatrix', name:'ViewProjection', buffer_metadata:{shape:[4,4], index:0}}, [view_proj], null);
+
+          } else {
+            gl.useProgram(null);
+            this.bound_program = null;
+          }
+        }
+        break;
+      case 'uniform':
+      case 'uniformMatrix':
+        {
+          if(this.bound_program != null){
+            let resinfo = this.bound_program.get('_info');
+            const uniform = resinfo.uniforms.find((element:any)=>{return element.name == command.name});
+            if (uniform != undefined){
+              const location = uniform.location;
+
+              if (command.cmd == 'uniform'){
+                let shape = command.buffer_metadata.shape[command.buffer_metadata.shape.length-1];
+                if (command.buffer_metadata.dtype == 'int32'){
+                  let bufarray:Int32Array = converted_buffers[command.buffer_metadata.index] as Int32Array;
+                  if (shape == 1) gl.uniform1iv(location, bufarray);
+                  else if (shape == 2) gl.uniform2iv(location, bufarray);
+                  else if (shape == 3) gl.uniform3iv(location, bufarray);
+                  else if (shape == 4) gl.uniform4iv(location, bufarray);
+                }
+                else if (command.buffer_metadata.dtype == 'uint32'){
+                  let bufarray:Uint32Array = converted_buffers[command.buffer_metadata.index] as Uint32Array;
+                  if (shape == 1) gl.uniform1uiv(location, bufarray);
+                  else if (shape == 2) gl.uniform2uiv(location, bufarray);
+                  else if (shape == 3) gl.uniform3uiv(location, bufarray);
+                  else if (shape == 4) gl.uniform4uiv(location, bufarray);
+                }
+                else if (command.buffer_metadata.dtype == 'float32'){
+                  let bufarray:Float32Array = converted_buffers[command.buffer_metadata.index] as Float32Array;
+                  if (shape == 1) gl.uniform1fv(location, bufarray);
+                  else if (shape == 2) gl.uniform2fv(location, bufarray);
+                  else if (shape == 3) gl.uniform3fv(location, bufarray);
+                  else if (shape == 4) gl.uniform4fv(location, bufarray);
+                }
+              }
+
+              else {
+                let a = command.buffer_metadata.shape[command.buffer_metadata.shape.length-2];
+                let b = command.buffer_metadata.shape[command.buffer_metadata.shape.length-1];
+                let bufarray:Float32Array = converted_buffers[command.buffer_metadata.index] as Float32Array;
+                if (a==2)
+                {
+                  if (b==2) gl.uniformMatrix2fv(location, false, bufarray);
+                  else if (b==3) gl.uniformMatrix2x3fv(location, false, bufarray);
+                  else if (b==4)gl.uniformMatrix2x4fv(location, false, bufarray);
+                }
+                else if (a==3)
+                {
+                  if (b==2) gl.uniformMatrix3x2fv(location, false, bufarray);
+                  else if (b==3) gl.uniformMatrix3fv(location, false, bufarray);
+                  else if (b==4)gl.uniformMatrix3x4fv(location, false, bufarray);
+                }
+                else if (a==4)
+                {
+                  if (b==2) gl.uniformMatrix4x2fv(location, false, bufarray);
+                  else if (b==3) gl.uniformMatrix4x3fv(location, false, bufarray);
+                  else if (b==4)gl.uniformMatrix4fv(location, false, bufarray);
+                }
+              }
+            }
+          }
+        }
+      break;
+      // ------------------------------- BUFFERS --------------------------------------
+      case 'createBuffer':{
+          let res = this.get_resource(command.resource);
+          const ptr = gl.createBuffer();
+          res.set('_gl_ptr', ptr);
+          res.set('_info', {type:'Buffer'});
+          res.save_changes();
+        }
+        break;
+      case 'bindBuffer':{
+          const target:string = command.target;
+          if(command.buffer >= 0){
+            const res = this.get_resource(command.buffer);
+            const ptr = res.get('_gl_ptr');
+            gl.bindBuffer((gl as any)[target], ptr);
+            this.bound_buffer = res;
+          } else {
+            gl.bindBuffer((gl as any)[target], null);
+            this.bound_buffer = null;
+          }
+        }
+        break;
+      case 'bufferData':{
+          const target:string = command.target;
+          const usage:string = command.usage;
+
+          if (command.hasOwnProperty('buffer_metadata')){
+            gl.bufferData((gl as any)[target], converted_buffers[command.buffer_metadata.index], (gl as any)[usage]);
+
+            if (command.update_info && this.bound_buffer != null){
+              const size = gl.getBufferParameter((gl as any)[target], gl.BUFFER_SIZE);
+              this.bound_buffer.set('_info', {type:"Buffer", size:size, target:target});
+              this.bound_buffer.save_changes();
+            }
+          }
+          else{
+            gl.bufferData((gl as any)[target], null, (gl as any)[usage]);
+            if (command.update_info && this.bound_buffer != null){
+              this.bound_buffer.set('_info', {type:"Buffer", size:'Undefined', target:target});
+              this.bound_buffer.save_changes();
+            }
+          }
+        }
+        break;
+      // ------------------------------- VERTEX ARRAYS --------------------------------------
+      case 'createVertexArray':{
+          let res = this.get_resource(command.resource);
+          const ptr = gl.createVertexArray();
+          res.set('_gl_ptr', ptr);
+          res.set('_info', {type:'Vertex Array Object', bindings:[]});
+          res.save_changes();
+        }
+        break;
+      case 'bindVertexArray':{
+          if(command.vertex_array >= 0){
+            const res = this.get_resource(command.vertex_array);
+            const ptr = res.get('_gl_ptr');
+            gl.bindVertexArray(ptr);
+            this.bound_vao = res;
+          } else {
+            gl.bindVertexArray(null);
+            this.bound_vao = null;
+          }
+        }
+        break;
+      case 'vertexAttribPointer':
+      case 'vertexAttribIPointer':
+      case 'enableVertexAttribArray':
+      case 'disableVertexAttribArray':
+      case 'vertexAttrib[1234]fv':
+      case 'vertexAttribI4[u]iv':
+        {
+          let index = -1;
+          if (typeof command.index === 'number'){
+            index = command.index;
+          }
+          else{
+            if (this.bound_program != null){
+              const attr = this.bound_program.get('_info').attributes.find((element:any)=>{return element.name == command.index});
+              if (attr != undefined){
+                index = attr.location;
+              }
+            }else{
+              console.error("a program must be bound to find the attribute");
+            }
+          }
+          if (index >= 0){
+            if (command.cmd == "vertexAttribIPointer"){
+              gl.vertexAttribIPointer(index, command.size, (gl as any)[command.type], command.stride, command.offset);
+              if (this.bound_vao != null && this.bound_buffer != null){
+                let vao_info = this.bound_vao.get('_info');
+                const buffer_uid = this.bound_buffer.get('uid');
+                let binding_info = vao_info.bindings.find((element:any)=>{return element.buffer_uid == buffer_uid});
+                if (binding_info == undefined){
+                  binding_info = {buffer_uid : buffer_uid, attributes : []};
+                  vao_info.bindings.push(binding_info);
+                }
+                binding_info.attributes.push({pointer:"vertexAttribIPointer", index:index, size:command.size, type:command.type, stride:command.stride, offset:command.offset})
+                this.bound_vao.set('_info', vao_info);
+                this.bound_vao.save_changes();
+              }
+            }
+            else if (command.cmd == "vertexAttribPointer"){
+              gl.vertexAttribPointer(index, command.size, (gl as any)[command.type], command.normalized, command.stride, command.offset);
+              if (this.bound_vao != null && this.bound_buffer != null){
+                let vao_info = this.bound_vao.get('_info');
+                const buffer_uid = this.bound_buffer.get('uid');
+                let binding_info = vao_info.bindings.find((element:any)=>{return element.buffer_uid == buffer_uid});
+                if (binding_info == undefined){
+                  binding_info = {buffer_uid : buffer_uid, attributes : []};
+                  vao_info.bindings.push(binding_info);
+                }
+                binding_info.attributes.push({pointer:"vertexAttribPointer", index:index, size:command.size, type:command.type, normalized:command.normalized, stride:command.stride, offset:command.offset})
+                this.bound_vao.set('_info', vao_info);
+                this.bound_vao.save_changes();
+              }
+            }
+            else if (command.cmd == "enableVertexAttribArray"){
+              gl.enableVertexAttribArray(index);
+            }
+            else if (command.cmd == "disableVertexAttribArray"){
+              gl.disableVertexAttribArray(index);
+            }
+            else if (command.cmd == "vertexAttrib[1234]fv"){
+              if (command.buffer_metadata.shape[0] == 1){
+                gl.vertexAttrib1fv(index, converted_buffers[command.buffer_metadata.index]);
+              } else if (command.buffer_metadata.shape[0] == 2){
+                gl.vertexAttrib2fv(index, converted_buffers[command.buffer_metadata.index]);
+              } if (command.buffer_metadata.shape[0] == 3){
+                gl.vertexAttrib3fv(index, converted_buffers[command.buffer_metadata.index]);
+              }if (command.buffer_metadata.shape[0] == 4){
+                gl.vertexAttrib4fv(index, converted_buffers[command.buffer_metadata.index]);
+              }
+            }
+            else if (command.cmd == "vertexAttribI4[u]iv"){
+              if(command.buffer_metadata.dtype == "uint32"){
+                gl.vertexAttribI4uiv(index, converted_buffers[command.buffer_metadata.index]);
+              } else if(command.buffer_metadata.dtype == "int32"){
+                gl.vertexAttribI4iv(index, converted_buffers[command.buffer_metadata.index]);
+              }
+            }
+          }
+          else{
+            console.error(`attribute ${command.index} location not found`);
+          }
+        }
+        break;
+        // ------------------------------- RENDER --------------------------------------
+        case 'drawArrays':{
+          gl.drawArrays((gl as any)[command.mode], command.first, command.count);
+        }
+        break;
+        case 'drawElements':{
+          gl.drawElements((gl as any)[command.mode], command.count, (gl as any)[command.type], command.offset);
+        }
+        break;
     }
-    this.programs.push(program);
   }
 
-  get_program(index:number){
-    return this.programs[index];
-  }
-
-  register_buffer(buffer:GLBuffer){
-    if(buffer.get('uid') != this.buffers.length){
-      throw new Error('uid should match the list index');
+  register_resource(resource:GLResource){
+    if(resource.get('uid') != this.resources.length){
+      console.error('uid not matching what we have internally');
     }
-    this.buffers.push(buffer);
+    this.resources.push(resource);
   }
 
-  get_buffer(index:number){
-    return this.buffers[index];
-  }
-
-  register_vao(vao:GLVertexArray){
-    if(vao.get('uid') != this.vertexarrays.length){
-      throw new Error('uid should match the list index');
-    }
-    this.vertexarrays.push(vao);
-  }
-
-  get_vao(index:number){
-    return this.vertexarrays[index];
+  get_resource(index:number){
+    return this.resources[index];
   }
 
   canvas: HTMLCanvasElement;
   ctx: WebGL2RenderingContext | null;
-  programs : GLProgram[] = [];
-  buffers : GLBuffer[] = [];
-  vertexarrays : GLVertexArray[] = [];
+
+  resources : GLResource[] = [];
+  bound_program: GLResource | null;
+  bound_buffer: GLResource | null;
+  bound_vao: GLResource | null;
   commands : any[] = [];
+  buffers : any[] = [];
 
   projection_matrix:number[];
   camera_matrix:number[];
   view_matrix:number[];
   view_proj_matrix:number[];
-
-  bound_program : GLProgram | null;
-  bound_vao : GLVertexArray | null;
 }
 
 export class GLViewer extends DOMWidgetView {

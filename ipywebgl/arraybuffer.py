@@ -14,4 +14,4 @@ def array_to_buffer(ar):
     if not ar.flags["C_CONTIGUOUS"]:
         ar = np.ascontiguousarray(ar)
 
-    return {"shape": ar.shape, "dtype": str(ar.dtype), "buffer":memoryview(ar.flatten())}
+    return {"shape": list(ar.shape), "dtype": str(ar.dtype)}, memoryview(ar.flatten())

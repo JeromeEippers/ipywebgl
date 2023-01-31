@@ -15,11 +15,5 @@ There is some major differences still :
 .. automodule:: ipywebgl.glviewer
    :members:
 
-.. automodule:: ipywebgl.glbuffer
-   :members:
-
-.. automodule:: ipywebgl.glprogram
-   :members:
-
-.. automodule:: ipywebgl.glvertexarray
+.. automodule:: ipywebgl.glresource
    :members:

@@ -1,7 +1,4 @@
 from .glviewer import GLViewer
-from .glprogram import GLProgramWidget
-from .glbuffer import GLBufferWidget
-from .glvertexarray import GLVertexArrayWidget
 
 from ._version import __version__, version_info
 
