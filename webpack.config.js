@@ -37,6 +37,7 @@ module.exports = [
     devtool: 'source-map',
     externals,
     resolve,
+    mode: 'production',
   },
 
   /**
@@ -64,6 +65,7 @@ module.exports = [
     },
     externals,
     resolve,
+    mode: 'production',
   },
 
 
@@ -86,6 +88,7 @@ module.exports = [
     devtool: 'source-map',
     externals,
     resolve,
+    mode: 'production',
   }
 
 ];
