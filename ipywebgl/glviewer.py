@@ -240,6 +240,344 @@ class GLViewer(DOMWidget):
             'z_far':z_far
         })
 
+    def blend_color(self, r:float, g:float, b:float, a:float):
+        """Append a blendColor command to the commands buffer.
+
+        Args:
+            r (float): red [0, 1]
+            g (float): green [0, 1]
+            b (float): blue [0, 1]
+            a (float): alpha [0, 1]
+        """
+        self._commands.append({
+            'cmd':'blendColor', 
+            'r':float(r), 
+            'g':float(g), 
+            'b':float(b), 
+            'a':float(a)
+        })
+
+    def blend_equation(self, mode:str):
+        """Append a blendEquation to the command buffer.
+
+        ['FUNC_ADD', 'FUNC_SUBTRACT', 'FUNC_REVERSE_SUBTRACT', 'MIN', 'MAX']
+
+        Args:
+            mode (str): how source and destination colors are combined
+        """
+        if mode not in ['FUNC_ADD', 'FUNC_SUBTRACT', 'FUNC_REVERSE_SUBTRACT', 'MIN', 'MAX']:
+            raise AttributeError("Invalid mode")
+
+        self._commands.append({
+            'cmd':'blendEquation', 
+            'mode' : mode
+        })
+
+    def blend_equation_separate(self, mode_rgb:str, mode_alpha:str):
+        """Append a blendEquationSeparate to the command buffer
+
+        ['FUNC_ADD', 'FUNC_SUBTRACT', 'FUNC_REVERSE_SUBTRACT', 'MIN', 'MAX']
+
+        Args:
+            mode_rgb (str):  how the red, green and blue components of source and destination colors are combined
+            mode_alpha (str): how the alpha component (transparency) of source and destination colors are combined
+        """
+        if mode_rgb not in ['FUNC_ADD', 'FUNC_SUBTRACT', 'FUNC_REVERSE_SUBTRACT', 'MIN', 'MAX']:
+            raise AttributeError("Invalid mode rgb")
+        if mode_alpha not in ['FUNC_ADD', 'FUNC_SUBTRACT', 'FUNC_REVERSE_SUBTRACT', 'MIN', 'MAX']:
+            raise AttributeError("Invalid mode alpha")
+        self._commands.append({
+            'cmd':'blendEquationSeparate', 
+            'mode_rgb' : mode_rgb,
+            'mode_alpha' : mode_alpha
+        })
+
+    def blend_func(self, s_factor:str, d_factor:str):
+        """Append a blendFunc to the command buffer
+
+        ['ZERO', 'ONE', 'SRC_COLOR', 'ONE_MINUS_SRC_COLOR', 'DST_COLOR', 'ONE_MINUS_DST_COLOR', 'SRC_ALPHA', 'ONE_MINUS_SRC_ALPHA', 'DST_ALPHA', 'ONE_MINUS_DST_ALPHA', 'CONSTANT_COLOR', 'ONE_MINUS_CONSTANT_COLOR', 'CONSTANT_ALPHA', 'ONE_MINUS_CONSTANT_ALPHA', 'SRC_ALPHA_SATURATE']
+
+        Args:
+            s_factor (str): a multiplier for the source blending factors
+            d_factor (str): a multiplier for the destination blending factors
+
+        Raises:
+            AttributeError: s_factor
+            AttributeError: d_factor
+        """
+
+        if s_factor not in ['ZERO', 'ONE', 'SRC_COLOR', 'ONE_MINUS_SRC_COLOR', 'DST_COLOR', 'ONE_MINUS_DST_COLOR', 'SRC_ALPHA', 'ONE_MINUS_SRC_ALPHA', 'DST_ALPHA', 'ONE_MINUS_DST_ALPHA', 'CONSTANT_COLOR', 'ONE_MINUS_CONSTANT_COLOR', 'CONSTANT_ALPHA', 'ONE_MINUS_CONSTANT_ALPHA', 'SRC_ALPHA_SATURATE']:
+            raise AttributeError("Invalid s_factor")
+        if d_factor not in ['ZERO', 'ONE', 'SRC_COLOR', 'ONE_MINUS_SRC_COLOR', 'DST_COLOR', 'ONE_MINUS_DST_COLOR', 'SRC_ALPHA', 'ONE_MINUS_SRC_ALPHA', 'DST_ALPHA', 'ONE_MINUS_DST_ALPHA', 'CONSTANT_COLOR', 'ONE_MINUS_CONSTANT_COLOR', 'CONSTANT_ALPHA', 'ONE_MINUS_CONSTANT_ALPHA', 'SRC_ALPHA_SATURATE']:
+            raise AttributeError("Invalid d_factor")
+        self._commands.append({
+            'cmd':'blendFunc', 
+            's_factor' : s_factor,
+            'd_factor' : d_factor
+        })
+
+    def blend_func_separate(self, src_rgb:str, dst_rgb:str, src_alpha:str, dst_alpha:str):
+        """Append a blendFuncSeparate to the command buffer
+
+        ['ZERO', 'ONE', 'SRC_COLOR', 'ONE_MINUS_SRC_COLOR', 'DST_COLOR', 'ONE_MINUS_DST_COLOR', 'SRC_ALPHA', 'ONE_MINUS_SRC_ALPHA', 'DST_ALPHA', 'ONE_MINUS_DST_ALPHA', 'CONSTANT_COLOR', 'ONE_MINUS_CONSTANT_COLOR', 'CONSTANT_ALPHA', 'ONE_MINUS_CONSTANT_ALPHA', 'SRC_ALPHA_SATURATE']
+
+        Args:
+            src_rgb (str): a multiplier for the source blending factors
+            dst_rgb (str): a multiplier for the destination blending factors
+            src_alpha (str): a multiplier for the source blending factors
+            dst_alpa (str): a multiplier for the destination blending factors
+        """
+
+        if src_rgb not in ['ZERO', 'ONE', 'SRC_COLOR', 'ONE_MINUS_SRC_COLOR', 'DST_COLOR', 'ONE_MINUS_DST_COLOR', 'SRC_ALPHA', 'ONE_MINUS_SRC_ALPHA', 'DST_ALPHA', 'ONE_MINUS_DST_ALPHA', 'CONSTANT_COLOR', 'ONE_MINUS_CONSTANT_COLOR', 'CONSTANT_ALPHA', 'ONE_MINUS_CONSTANT_ALPHA', 'SRC_ALPHA_SATURATE']:
+            raise AttributeError("Invalid src_rgb")
+        if dst_rgb not in ['ZERO', 'ONE', 'SRC_COLOR', 'ONE_MINUS_SRC_COLOR', 'DST_COLOR', 'ONE_MINUS_DST_COLOR', 'SRC_ALPHA', 'ONE_MINUS_SRC_ALPHA', 'DST_ALPHA', 'ONE_MINUS_DST_ALPHA', 'CONSTANT_COLOR', 'ONE_MINUS_CONSTANT_COLOR', 'CONSTANT_ALPHA', 'ONE_MINUS_CONSTANT_ALPHA', 'SRC_ALPHA_SATURATE']:
+            raise AttributeError("Invalid dst_rgb")
+        if src_alpha not in ['ZERO', 'ONE', 'SRC_COLOR', 'ONE_MINUS_SRC_COLOR', 'DST_COLOR', 'ONE_MINUS_DST_COLOR', 'SRC_ALPHA', 'ONE_MINUS_SRC_ALPHA', 'DST_ALPHA', 'ONE_MINUS_DST_ALPHA', 'CONSTANT_COLOR', 'ONE_MINUS_CONSTANT_COLOR', 'CONSTANT_ALPHA', 'ONE_MINUS_CONSTANT_ALPHA', 'SRC_ALPHA_SATURATE']:
+            raise AttributeError("Invalid src_alpha")
+        if dst_alpha not in ['ZERO', 'ONE', 'SRC_COLOR', 'ONE_MINUS_SRC_COLOR', 'DST_COLOR', 'ONE_MINUS_DST_COLOR', 'SRC_ALPHA', 'ONE_MINUS_SRC_ALPHA', 'DST_ALPHA', 'ONE_MINUS_DST_ALPHA', 'CONSTANT_COLOR', 'ONE_MINUS_CONSTANT_COLOR', 'CONSTANT_ALPHA', 'ONE_MINUS_CONSTANT_ALPHA', 'SRC_ALPHA_SATURATE']:
+            raise AttributeError("Invalid dst_alpha")
+        self._commands.append({
+            'cmd':'blendFuncSeparate', 
+            'src_rgb' : src_rgb,
+            'dst_rgb' : dst_rgb,
+            'src_alpha':src_alpha,
+            'dst_alpha':dst_alpha
+        })
+
+
+    def create_texture(self) -> GLResourceWidget:
+        """Append a createTexture command to the command list
+
+        Returns:
+            GLResourceWidget: the resource that will hold the texture
+        """
+        uid = len(self._resources)
+        resource = GLResourceWidget(_context=self, uid=uid)
+        self._resources.append(resource)
+        self._commands.append({
+            'cmd':'createTexture', 
+            'resource':uid
+        })
+        return resource
+
+
+    def bind_texture(self, target:str, texture:GLResourceWidget):
+        """Append a bindTexture command to the command list
+
+        Args:
+            target (str): the binding point ["TEXTURE_2D", "TEXTURE_CUBE_MAP", "TEXTURE_3D", "TEXTURE_2D_ARRAY"]
+            texture (GLResourceWidget): the texture resource
+        """
+        if target not in ["TEXTURE_2D", "TEXTURE_CUBE_MAP", "TEXTURE_3D", "TEXTURE_2D_ARRAY"]:
+            raise AttributeError("Invalid target")
+        self._commands.append({
+            'cmd':'bindTexture', 
+            'texture':texture.uid, 
+            'target':target
+        })
+
+
+    def active_texture(self, texture:int):
+        """Append an activeTexture command
+
+        Args:
+            texture (int): The texture unit to make active. The value is a gl.TEXTURE0 + texture
+        """
+        self._commands.append({
+            'cmd':'activeTexture', 
+            'texture':texture, 
+        })
+
+
+    def generate_mipmap(self, target:str):
+        """Append a generateMipmap command
+
+        Args:
+            target (str): the binding point ["TEXTURE_2D", "TEXTURE_CUBE_MAP", "TEXTURE_3D", "TEXTURE_2D_ARRAY"]
+        """
+        if target not in ["TEXTURE_2D", "TEXTURE_CUBE_MAP", "TEXTURE_3D", "TEXTURE_2D_ARRAY"]:
+            raise AttributeError("Invalid target")
+        self._commands.append({
+            'cmd':'generateMipmap',  
+            'target':target
+        })
+
+
+    def tex_image_2d(self, target:str, level:int, internal_format:str, width:int, height:int, border:int, format:str, data_type:str, pixel:np.array):
+        """Append a texImage2D command
+
+        target = ['TEXTURE_2D', 'TEXTURE_CUBE_MAP_POSITIVE_X', 'TEXTURE_CUBE_MAP_NEGATIVE_X', 'TEXTURE_CUBE_MAP_POSITIVE_Y', 'TEXTURE_CUBE_MAP_NEGATIVE_Y', 'TEXTURE_CUBE_MAP_POSITIVE_Z', 'TEXTURE_CUBE_MAP_NEGATIVE_Z']
+        
+        internal_format = ['RGBA', 'RGB', 'LUMINANCE_ALPHA', 'LUMINANCE', 'ALPHA',
+        'R8', 'R8_SNORM', 'RG8', 'RG8_SNORM', 'RGB8', 'RGB8_SNORM', 'RGB565', 'RGBA4', 'RGB5_A1', 'RGBA8', 'RGBA8_SNORM', 'RGB10_A2', 'RGB10_A2UI', 'SRGB8', 'SRGB8_ALPHA8',
+        'R16F', 'RG16F', 'RGB16F', 'RGBA16F', 'R32F', 'RG32F', 'RGB32F', 'RGBA32F', 'R11F_G11F_B10F', 'RGB9_E5',
+        'R8I', 'R8UI', 'R16I', 'R16UI', 'R32I', 'R32UI', 'RG8I', 'RG8UI', 'RG16I', 'RG16UI', 'RG32I', 'RG32UI', 
+        'RGB8I', 'RGB8UI', 'RGB16I', 'RGB16UI', 'RGB32I', 'RGB32UI', 'RGBA8I', 'RGBA8UI', 'RGBA16I', 'RGBA16UI', 'RGBA32I', 'RGBA32UI']
+
+        format = ['RGB', 'RGBA', 'LUMINANCE_ALPHA', 'LUMINANCE', 'ALPHA', 'RED', 'RED_INTEGER', 'RG', 'RG_INTEGER', 'RGB', 'RGB_INTEGER', 'RGBA_INTEGER']
+
+        data_type = ['UNSIGNED_BYTE', 'UNSIGNED_SHORT_5_6_5', 'UNSIGNED_SHORT_4_4_4_4', 'UNSIGNED_SHORT_5_5_5_1', 'BYTE', 'UNSIGNED_SHORT', 'SHORT', 'UNSIGNED_INT', 'INT', 'HALF_FLOAT', 'FLOAT', 'UNSIGNED_INT_2_10_10_10_REV', 'UNSIGNED_INT_10F_11F_11F_REV', 'UNSIGNED_INT_5_9_9_9_REV', 'UNSIGNED_INT_24_8', 'FLOAT_32_UNSIGNED_INT_24_8_REV']
+
+        link between internal_format, format and type;
+        https://registry.khronos.org/webgl/specs/latest/2.0/#TEXTURE_TYPES_FORMATS_FROM_DOM_ELEMENTS_TABLE
+
+        Args:
+            target (str): the binding point (target) of the active texture
+            level (int): the level of detail. Level 0 is the base image level and level n is the n-th mipmap reduction level.
+            internal_format (str): the color components in the texture
+            width (int): the width of the texture.
+            height (int): the height of the texture.
+            border (int): specifying the width of the border. Must be 0.
+            format (str):  the format of the texel data
+            data_type (str): the data type of the texel data
+            pixel (np.array): the buffer
+        """
+        if target not in ['TEXTURE_2D', 'TEXTURE_CUBE_MAP_POSITIVE_X', 'TEXTURE_CUBE_MAP_NEGATIVE_X', 'TEXTURE_CUBE_MAP_POSITIVE_Y', 'TEXTURE_CUBE_MAP_NEGATIVE_Y', 'TEXTURE_CUBE_MAP_POSITIVE_Z', 'TEXTURE_CUBE_MAP_NEGATIVE_Z']:
+            raise AttributeError("Invalid target")
+
+        if internal_format not in [
+            'RGBA', 'RGB', 'LUMINANCE_ALPHA', 'LUMINANCE', 'ALPHA',
+            'R8', 'R8_SNORM', 'RG8', 'RG8_SNORM', 'RGB8', 'RGB8_SNORM', 'RGB565', 'RGBA4', 'RGB5_A1', 'RGBA8', 'RGBA8_SNORM', 'RGB10_A2', 'RGB10_A2UI', 'SRGB8', 'SRGB8_ALPHA8',
+            'R16F', 'RG16F', 'RGB16F', 'RGBA16F', 'R32F', 'RG32F', 'RGB32F', 'RGBA32F', 'R11F_G11F_B10F', 'RGB9_E5',
+            'R8I', 'R8UI', 'R16I', 'R16UI', 'R32I', 'R32UI', 'RG8I', 'RG8UI', 'RG16I', 'RG16UI', 'RG32I', 'RG32UI', 
+            'RGB8I', 'RGB8UI', 'RGB16I', 'RGB16UI', 'RGB32I', 'RGB32UI', 'RGBA8I', 'RGBA8UI', 'RGBA16I', 'RGBA16UI', 'RGBA32I', 'RGBA32UI']:
+            raise AttributeError("Invalid internal_format")
+
+        if format not in ['RGB', 'RGBA', 'LUMINANCE_ALPHA', 'LUMINANCE', 'ALPHA', 'RED', 'RED_INTEGER', 'RG', 'RG_INTEGER', 'RGB', 'RGB_INTEGER', 'RGBA_INTEGER']:
+            raise AttributeError("Invalid format")
+
+        if data_type not in ['UNSIGNED_BYTE', 'UNSIGNED_SHORT_5_6_5', 'UNSIGNED_SHORT_4_4_4_4', 'UNSIGNED_SHORT_5_5_5_1', 'BYTE', 'UNSIGNED_SHORT', 'SHORT', 'UNSIGNED_INT', 'INT', 'HALF_FLOAT', 'FLOAT', 'UNSIGNED_INT_2_10_10_10_REV', 'UNSIGNED_INT_10F_11F_11F_REV', 'UNSIGNED_INT_5_9_9_9_REV', 'UNSIGNED_INT_24_8', 'FLOAT_32_UNSIGNED_INT_24_8_REV']:
+            raise AttributeError("Invalid data_type")
+
+        meta_data = {}
+        buffer = []
+        meta_data, buffer = array_to_buffer(pixel)
+        meta_data['index'] = len(self._buffers)
+        self._buffers.append(buffer)
+        self._commands.append({
+            'cmd':'texImage2D', 
+            'level': level,
+            'internal_format':internal_format, 
+            'width':width, 
+            'height':height, 
+            'border':border,
+            'format':format,
+            'data_type':data_type,
+            'buffer_metadata':meta_data
+        })
+
+    def tex_image_3d(self, target:str, level:int, internal_format:str, width:int, height:int, depth:int, border:int, format:str, data_type:str, pixel:np.array):
+        """Append a texImage3D command
+
+        target = ['TEXTURE_3D', 'TEXTURE_2D_ARRAY']
+        
+        internal_format = ['RGBA', 'RGB', 'LUMINANCE_ALPHA', 'LUMINANCE', 'ALPHA',
+        'R8', 'R16F', 'R32F', 'R8UI', 'RG8', 'RG16F', 'RG32F', 'RGUI', 'RGB8', 'SRGB8', 'RGB565', 'R11F_G11F_B10F',
+        'RGB9_E5', 'RGB16F', 'RGB32F', 'RGB8UI', 'RGBA8', 'SRGB8_ALPHA8', 'RGB5_A1', 'RGBA4444', 'RGBA16F', 'RGBA32F', 'RGBA8UI']
+
+        format = ['RGB', 'RGBA', 'LUMINANCE_ALPHA', 'LUMINANCE', 'ALPHA', 'RED', 'RED_INTEGER', 'RG', 'RG_INTEGER', 'RGB', 'RGB_INTEGER', 'RGBA_INTEGER']
+
+        data_type = ['UNSIGNED_BYTE', 'UNSIGNED_SHORT_5_6_5', 'UNSIGNED_SHORT_4_4_4_4', 'UNSIGNED_SHORT_5_5_5_1', 'BYTE', 'UNSIGNED_SHORT', 'SHORT', 'UNSIGNED_INT', 'INT', 'HALF_FLOAT', 'FLOAT', 'UNSIGNED_INT_2_10_10_10_REV', 'UNSIGNED_INT_10F_11F_11F_REV', 'UNSIGNED_INT_5_9_9_9_REV', 'UNSIGNED_INT_24_8', 'FLOAT_32_UNSIGNED_INT_24_8_REV']
+
+        link between internal_format, format and type;
+        https://registry.khronos.org/webgl/specs/latest/2.0/#TEXTURE_TYPES_FORMATS_FROM_DOM_ELEMENTS_TABLE
+
+        Args:
+            target (str): the binding point (target) of the active texture
+            level (int): the level of detail. Level 0 is the base image level and level n is the n-th mipmap reduction level.
+            internal_format (str): the color components in the texture
+            width (int): the width of the texture.
+            height (int): the height of the texture.
+            depth (int): the depth of the texture.
+            border (int): specifying the width of the border. Must be 0.
+            format (str):  the format of the texel data
+            data_type (str): the data type of the texel data
+            pixel (np.array): the buffer
+        """
+        if target not in ['TEXTURE_3D', 'TEXTURE_2D_ARRAY']:
+            raise AttributeError("Invalid target")
+
+        if internal_format not in ['RGBA', 'RGB', 'LUMINANCE_ALPHA', 'LUMINANCE', 'ALPHA',
+            'R8', 'R16F', 'R32F', 'R8UI', 'RG8', 'RG16F', 'RG32F', 'RGUI', 'RGB8', 'SRGB8', 'RGB565', 'R11F_G11F_B10F',
+            'RGB9_E5', 'RGB16F', 'RGB32F', 'RGB8UI', 'RGBA8', 'SRGB8_ALPHA8', 'RGB5_A1', 'RGBA4444', 'RGBA16F', 'RGBA32F', 'RGBA8UI']:
+            raise AttributeError("Invalid internal_format")
+
+        if format not in ['RGB', 'RGBA', 'LUMINANCE_ALPHA', 'LUMINANCE', 'ALPHA', 'RED', 'RED_INTEGER', 'RG', 'RG_INTEGER', 'RGB', 'RGB_INTEGER', 'RGBA_INTEGER']:
+            raise AttributeError("Invalid format")
+
+        if data_type not in ['UNSIGNED_BYTE', 'UNSIGNED_SHORT_5_6_5', 'UNSIGNED_SHORT_4_4_4_4', 'UNSIGNED_SHORT_5_5_5_1', 'BYTE', 'UNSIGNED_SHORT', 'SHORT', 'UNSIGNED_INT', 'INT', 'HALF_FLOAT', 'FLOAT', 'UNSIGNED_INT_2_10_10_10_REV', 'UNSIGNED_INT_10F_11F_11F_REV', 'UNSIGNED_INT_5_9_9_9_REV', 'UNSIGNED_INT_24_8', 'FLOAT_32_UNSIGNED_INT_24_8_REV']:
+            raise AttributeError("Invalid data_type")
+
+        meta_data = {}
+        buffer = []
+        meta_data, buffer = array_to_buffer(pixel)
+        meta_data['index'] = len(self._buffers)
+        self._buffers.append(buffer)
+        self._commands.append({
+            'cmd':'texImage3D', 
+            'level': level,
+            'internal_format':internal_format, 
+            'width':width, 
+            'height':height, 
+            'border':border,
+            'depth':depth,
+            'format':format,
+            'data_type':data_type,
+            'buffer_metadata':meta_data
+        })
+
+
+    def tex_parameter(self, target:str, pname:str, param):
+        """Append a texParameteri or texParameterf to the command list
+
+        pname = ["TEXTURE_MAG_FILTER", "TEXTURE_MIN_FILTER", "TEXTURE_WRAP_S", "TEXTURE_WRAP_T", 
+            'TEXTURE_BASE_LEVEL', 'TEXTURE_COMPARE_FUNC', 'TEXTURE_COMPARE_MODE', 'TEXTURE_MAX_LEVEL', 'TEXTURE_MAX_LOD', 'TEXTURE_MIN_LOD', 'TEXTURE_WRAP_R']
+
+        param = int or float or ['LINEAR', 'NEAREST', 'NEAREST_MIPMAP_NEAREST', 'LINEAR_MIPMAP_NEAREST', 'NEAREST_MIPMAP_LINEAR', 'LINEAR_MIPMAP_LINEAR',
+            'REPEAT', 'CLAMP_TO_EDGE', 'MIRRORED_REPEAT', 
+            'LEQUAL', 'GEQUAL', 'LESS', 'GREATER', 'EQUAL', 'NOTEQUAL', 'ALWAYS', 'NEVER',
+            'NONE', 'COMPARE_REF_TO_TEXTURE']
+
+        Args:
+            target (str): the binding point ["TEXTURE_2D", "TEXTURE_CUBE_MAP", "TEXTURE_3D", "TEXTURE_2D_ARRAY"]
+            pname(str): the texture parameter to set.
+            param(str | int | float): the value for the specified parameter.
+        """
+        if target not in ["TEXTURE_2D", "TEXTURE_CUBE_MAP", "TEXTURE_3D", "TEXTURE_2D_ARRAY"]:
+            raise AttributeError("Invalid target")
+        
+        if pname not in ["TEXTURE_MAG_FILTER", "TEXTURE_MIN_FILTER", "TEXTURE_WRAP_S", "TEXTURE_WRAP_T", 
+            'TEXTURE_BASE_LEVEL', 'TEXTURE_COMPARE_FUNC', 'TEXTURE_COMPARE_MODE', 'TEXTURE_MAX_LEVEL', 'TEXTURE_MAX_LOD', 'TEXTURE_MIN_LOD', 'TEXTURE_WRAP_R']:
+            raise AttributeError("Invalid pname")
+
+        if isinstance(param, int):
+            self._commands.append({
+                'cmd':'texParameteri', 
+                'target':target,
+                'pname':pname,
+                'param':param
+            })
+        elif isinstance(param, float):
+            self._commands.append({
+                'cmd':'texParameterf', 
+                'target':target,
+                'pname':pname,
+                'param':param
+            })
+        else:
+            if param not in ['LINEAR', 'NEAREST', 'NEAREST_MIPMAP_NEAREST', 'LINEAR_MIPMAP_NEAREST', 'NEAREST_MIPMAP_LINEAR', 'LINEAR_MIPMAP_LINEAR',
+                'REPEAT', 'CLAMP_TO_EDGE', 'MIRRORED_REPEAT', 
+                'LEQUAL', 'GEQUAL', 'LESS', 'GREATER', 'EQUAL', 'NOTEQUAL', 'ALWAYS', 'NEVER',
+                'NONE', 'COMPARE_REF_TO_TEXTURE']:
+                raise AttributeError("Invalid param")
+            self._commands.append({
+                'cmd':'texParameter_str', 
+                'target':target,
+                'pname':pname,
+                'param':param
+            })
+
+
 
     def create_shader(self, shadertype:str) -> GLResourceWidget:
         """Append a createShader command to the command list
@@ -542,7 +880,43 @@ class GLViewer(DOMWidget):
                 'usage':usage, 
                 'update_info':update_info
             })
-        
+
+    def buffer_sub_data(self, target='ARRAY_BUFFER', dst_byte_offset=0, src_data=None, src_offset=0):
+        """Append a BufferSubData to the command list
+
+            target values : ["ARRAY_BUFFER", "ELEMENT_ARRAY_BUFFER", "COPY_READ_BUFFER", "COPY_WRITE_BUFFER", "TRANSFORM_FEEDBACK_BUFFER", "UNIFORM_BUFFER"]
+        Args:
+            target (str, optional): specifying the binding point (target). Defaults to 'ARRAY_BUFFER'.
+            dst_byte_offset (int, optional): specifying an offset in bytes where the data replacement will start. Defaults to 0.
+            src_data (np.array, optional): the array that will be copied into the data store. Defaults to None.
+            src_offset (int, optional): specifying the element index offset where to start reading the buffer. Defaults to 0.
+
+        Raises:
+            AttributeError: _description_
+        """
+        if target not in ["ARRAY_BUFFER", "ELEMENT_ARRAY_BUFFER", "COPY_READ_BUFFER", "COPY_WRITE_BUFFER", "TRANSFORM_FEEDBACK_BUFFER", "UNIFORM_BUFFER"]:
+            raise AttributeError("Invalid target")
+
+        meta_data = {}
+        buffer = []
+        if (src_data is not None):
+            meta_data, buffer = array_to_buffer(src_data)
+            meta_data['index'] = len(self._buffers)
+            self._buffers.append(buffer)
+            self._commands.append({
+                'cmd':'bufferSubData', 
+                'target':target, 
+                'dst_byte_offset':dst_byte_offset, 
+                'src_offset':src_offset, 
+                'buffer_metadata':meta_data
+            })
+        else:
+            self._commands.append({
+                'cmd':'bufferSubData', 
+                'target':target, 
+                'dst_byte_offset':dst_byte_offset, 
+                'src_offset':src_offset, 
+            })
 
     def create_vertex_array(self) -> GLResourceWidget:
         """Append a createVertexArray command to the command list
@@ -790,6 +1164,26 @@ class GLViewer(DOMWidget):
             'count':count
         })
 
+    
+    def draw_arrays_instanced(self, mode:str, first:int, count:int, instance_count:int):
+        """Append a drawArraysInstanced command to the commands buffer
+
+        Args:
+            mode ({'POINTS', 'LINE_STRIP', 'LINE_LOOP', 'LINES', 'TRIANGLE_STRIP', 'TRIANGLE_FAN', 'TRIANGLES'}): type of drawing operation.
+            first (int): the starting index in the array of vector points.
+            count (int): the number of indices to be rendered.
+            instance_count(int): the number of instances fo the range of elements to execute.
+        """
+        if mode not in ['POINTS', 'LINE_STRIP', 'LINE_LOOP', 'LINES', 'TRIANGLE_STRIP', 'TRIANGLE_FAN', 'TRIANGLES']:
+            raise AttributeError("Invalid mode")
+        self._commands.append({
+            'cmd':'drawArraysInstanced', 
+            'mode':mode, 
+            'first':first, 
+            'count':count,
+            'instance_count':instance_count
+        })
+
 
     def draw_elements(self, mode:str, count:int, bytetype:str, offset:int):
         """Append a drawElements command to the commands buffer
@@ -810,5 +1204,29 @@ class GLViewer(DOMWidget):
             'count':count, 
             'type':bytetype, 
             'offset':offset
+        })
+
+    
+    def draw_elements_instanced(self, mode:str, count:int, bytetype:str, offset:int, instance_count:int):
+        """Append a drawElementsInstanced command to the commands buffer
+
+        Args:
+            mode ({'POINTS', 'LINE_STRIP', 'LINE_LOOP', 'LINES', 'TRIANGLE_STRIP', 'TRIANGLE_FAN', 'TRIANGLES'}): type of drawing operation.
+            count (int): specifying the number of elements of the bound element array buffer to be rendered.
+            bytetype ({'UNSIGNED_BYTE', 'UNSIGNED_SHORT'}): type of data in the index buffer.
+            offset (int): a byte offset in the element array buffer. Must be a valid multiple of the size of the given type.
+            instance_count (int): the number of instances of the set of elements to execute.
+        """
+        if mode not in ['POINTS', 'LINE_STRIP', 'LINE_LOOP', 'LINES', 'TRIANGLE_STRIP', 'TRIANGLE_FAN', 'TRIANGLES']:
+            raise AttributeError("Invalid mode")
+        if bytetype not in ['UNSIGNED_BYTE', 'UNSIGNED_SHORT']:
+            raise AttributeError("Invalid type")
+        self._commands.append({
+            'cmd':'drawElementsInstanced', 
+            'mode':mode, 
+            'count':count, 
+            'type':bytetype, 
+            'offset':offset,
+            'instance_count':instance_count
         })
             

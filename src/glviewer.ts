@@ -165,6 +165,8 @@ export class GLModel extends DOMWidgetModel {
         gl.cullFace((gl as any)[command.mode]);
       }
       break;
+
+      // ------------------------------- DEPTH --------------------------------------
       case 'depthFunc':{
         gl.depthFunc((gl as any)[command.func]);
       }
@@ -178,6 +180,79 @@ export class GLModel extends DOMWidgetModel {
       }
       break;
 
+      // ------------------------------- COLOR --------------------------------------
+      case 'blendColor':
+          gl.blendColor(command.r, command.g, command.b, command.a);
+        break;
+      case 'blendEquation':
+        gl.blendEquation((gl as any)[command.mode]);
+        break;
+      case 'blendEquationSeparate':
+          gl.blendEquationSeparate((gl as any)[command.mode_rgb], (gl as any)[command.mode_alpha]);
+          break;
+      case 'blendFunc':
+          gl.blendFunc((gl as any)[command.s_factor], (gl as any)[command.d_factor])
+      break;
+      case 'blend_func_separate':
+         gl.blendFuncSeparate((gl as any)[command.src_rgb], (gl as any)[command.dst_rgb], (gl as any)[command.src_alpha], (gl as any)[command.dst_alpha])
+        break;
+        
+      // ------------------------------- TEXTURE --------------------------------------
+      case 'createTexture':{
+        let res = this.get_resource(command.resource);
+        const ptr = gl.createTexture();
+        res.set('_gl_ptr', ptr);
+        res.set('_info', {type:'texture'});
+        res.save_changes();
+      }
+      break;
+      case 'bindTexture':{
+        const texture = this.get_resource(command.texture).get('_gl_ptr');
+        gl.bindTexture((gl as any)[command.target], texture);
+      }
+      break;
+      case 'activeTexture':
+        gl.activeTexture(gl.TEXTURE0 + command.texture);
+      break;
+      case 'generateMipmap':
+        gl.generateMipmap((gl as any)[command.target]);
+      break;
+      case 'texImage2D':
+        gl.texImage2D(
+          (gl as any)[command.target],
+          command.level,
+          (gl as any)[command.internal_format],
+          command.width,
+          command.height,
+          command.border,
+          (gl as any)[command.format],
+          (gl as any)[command.data_type],
+          converted_buffers[command.buffer_metadata.index]
+        )
+      break;
+      case 'texImage3D':
+        gl.texImage3D(
+          (gl as any)[command.target],
+          command.level,
+          (gl as any)[command.internal_format],
+          command.width,
+          command.height,
+          command.depth,
+          command.border,
+          (gl as any)[command.format],
+          (gl as any)[command.data_type],
+          converted_buffers[command.buffer_metadata.index]
+        )
+      break;
+      case 'texParameteri':
+        gl.texParameteri((gl as any)[command.target], (gl as any)[command.pname], command.param);
+      break;
+      case 'texParameterf':
+        gl.texParameterf((gl as any)[command.target], (gl as any)[command.pname], command.param);
+      break;
+      case 'texParameter_str':
+        gl.texParameteri((gl as any)[command.target], (gl as any)[command.pname], (gl as any)[command.param]);
+      break;
       // ------------------------------- SHADERS --------------------------------------
       case 'createShader':{
         let res = this.get_resource(command.resource);
@@ -384,6 +459,18 @@ export class GLModel extends DOMWidgetModel {
           }
         }
         break;
+      case 'bufferSubData':{
+          const target:string = command.target;
+
+          if (command.hasOwnProperty('buffer_metadata')){
+            gl.bufferSubData((gl as any)[target], command.dst_byte_offset, converted_buffers[command.buffer_metadata.index], command.src_offset);
+
+          }
+          else{
+            gl.bufferSubData((gl as any)[target], command.dst_byte_offset, command.src_offset);
+          }
+        }
+        break;
       // ------------------------------- VERTEX ARRAYS --------------------------------------
       case 'createVertexArray':{
           let res = this.get_resource(command.resource);
@@ -492,8 +579,16 @@ export class GLModel extends DOMWidgetModel {
           gl.drawArrays((gl as any)[command.mode], command.first, command.count);
         }
         break;
+        case 'drawArraysInstanced':{
+          gl.drawArraysInstanced((gl as any)[command.mode], command.first, command.count, command.instance_count);
+        }
+        break;
         case 'drawElements':{
           gl.drawElements((gl as any)[command.mode], command.count, (gl as any)[command.type], command.offset);
+        }
+        break;
+        case 'drawElementsInstanced':{
+          gl.drawElementsInstanced((gl as any)[command.mode], command.count, (gl as any)[command.type], command.offset, command.instance_count);
         }
         break;
     }
