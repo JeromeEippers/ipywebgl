@@ -456,6 +456,7 @@ class GLViewer(DOMWidget):
         self._buffers.append(buffer)
         self._commands.append({
             'cmd':'texImage2D', 
+            'target':target,
             'level': level,
             'internal_format':internal_format, 
             'width':width, 
@@ -515,6 +516,7 @@ class GLViewer(DOMWidget):
         self._buffers.append(buffer)
         self._commands.append({
             'cmd':'texImage3D', 
+            'target':target,
             'level': level,
             'internal_format':internal_format, 
             'width':width, 
