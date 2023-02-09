@@ -21,6 +21,20 @@ function frustrum(left: number, right: number, bottom: number, top: number, near
     ]
 }
 
+export function m4OrthographicProjectionMatrix(width: number, height: number, near: number, far: number) {
+    const A = 1. / width;
+    const B = 1. / height;
+    const C = -(far + near) / (far - near)
+    const D = -2. / (far - near)
+
+    return [
+        A, 0, 0, 0,
+        0, B, 0, 0,
+        0, 0, D, C,
+        0, 0, 0, 1
+    ]
+}
+
 export function m4Transpose(m:number[]){
     return [
         m[0], m[4], m[8], m[12],

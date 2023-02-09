@@ -574,6 +574,7 @@ export class GLModel extends DOMWidgetModel {
           }
         }
         break;
+
         // ------------------------------- RENDER --------------------------------------
         case 'drawArrays':{
           gl.drawArrays((gl as any)[command.mode], command.first, command.count);
@@ -589,6 +590,31 @@ export class GLModel extends DOMWidgetModel {
         break;
         case 'drawElementsInstanced':{
           gl.drawElementsInstanced((gl as any)[command.mode], command.count, (gl as any)[command.type], command.offset, command.instance_count);
+        }
+        break;
+
+        // ------------------------------- FRAMEBUFFER --------------------------------------
+        case 'createFramebuffer':{
+          let res = this.get_resource(command.resource);
+          const ptr = gl.createFramebuffer();
+          res.set('_gl_ptr', ptr);
+          res.set('_info', {type:'Framebuffer'});
+          res.save_changes();
+        }
+        break;
+        case 'bindFramebuffer':{
+          if (command.framebuffer >= 0){
+            let res = this.get_resource(command.framebuffer);
+            gl.bindFramebuffer((gl as any)[command.target], res.get('_gl_ptr'));
+          }
+          else{
+            gl.bindFramebuffer((gl as any)[command.target], null);
+          }
+        }
+        break;
+        case 'framebufferTexture2D':{
+          let res = this.get_resource(command.texture);
+          gl.framebufferTexture2D((gl as any)[command.target], (gl as any)[command.attachement], (gl as any)[command.textarget], res.get('_gl_ptr'), command.level);
         }
         break;
     }

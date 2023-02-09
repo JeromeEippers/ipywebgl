@@ -1232,3 +1232,67 @@ class GLViewer(DOMWidget):
             'instance_count':instance_count
         })
             
+
+    def create_framebuffer(self) -> GLResourceWidget:
+        """Append a createFramebuffer command to the command list
+
+        Returns:
+            GLResourceWidget: the resource that will hold the framebuffer
+        """
+        uid = len(self._resources)
+        resource = GLResourceWidget(_context=self, uid=uid)
+        self._resources.append(resource)
+        self._commands.append({
+            'cmd':'createFramebuffer', 
+            'resource':uid
+        })
+        return resource
+
+
+    def bind_framebuffer(self, target:str, framebuffer:GLResourceWidget=None):
+        """Append a bindFramebuffer command
+
+        Args:
+            target (str): the binding point (target) ["FRAMEBUFFER", "DRAW_FRAMEBUFFER", "READ_FRAMEBUFFER"]
+            framebuffer (GLResourceWidget): the framebuffer
+        """
+        if target not in ["FRAMEBUFFER", "DRAW_FRAMEBUFFER", "READ_FRAMEBUFFER"]:
+            raise AttributeError("Invalid target")
+        uid = -1
+        if framebuffer is not None:
+            uid = framebuffer.uid
+        self._commands.append({
+            'cmd':'bindFramebuffer', 
+            'target':target,
+            'framebuffer':uid
+        })
+
+
+    def framebuffer_texture_2d(self, target:str, attachement:str, textarget:str, texture:GLResourceWidget, level:int):
+        """Append a framebufferTexture2D command
+
+        Args:
+            target (str): the binding point (target). ["FRAMEBUFFER", "DRAW_FRAMEBUFFER", "READ_FRAMEBUFFER"]
+            attachement (str):  the attachment point for the texture. ["COLOR_ATTACHMENT0", "DEPTH_ATTACHMENT", "STENCIL_ATTACHMENT", 'DEPTH_STENCIL_ATTACHMENT', 'COLOR_ATTACHMENT1', 'COLOR_ATTACHMENT2', 'COLOR_ATTACHMENT3', 'COLOR_ATTACHMENT4', 'COLOR_ATTACHMENT5', 'COLOR_ATTACHMENT6', 'COLOR_ATTACHMENT7', 'COLOR_ATTACHMENT8', 'COLOR_ATTACHMENT9', 'COLOR_ATTACHMENT10', 'COLOR_ATTACHMENT11', 'COLOR_ATTACHMENT12', 'COLOR_ATTACHMENT13', 'COLOR_ATTACHMENT14', 'COLOR_ATTACHMENT15']:
+            textarget (str): the texture target. ['TEXTURE_2D', 'TEXTURE_CUBE_MAP_POSITIVE_X', 'TEXTURE_CUBE_MAP_NEGATIVE_X', 'TEXTURE_CUBE_MAP_POSITIVE_Y', 'TEXTURE_CUBE_MAP_NEGATIVE_Y', 'TEXTURE_CUBE_MAP_POSITIVE_Z', 'TEXTURE_CUBE_MAP_NEGATIVE_Z']
+            texture (GLResourceWidget): the texture.
+            level (int): the mipmap level of the texture image to be attached. Must be 0.
+        """
+        if target not in ["FRAMEBUFFER", "DRAW_FRAMEBUFFER", "READ_FRAMEBUFFER"]:
+            raise AttributeError("Invalid target")
+
+        if attachement not in ["COLOR_ATTACHMENT0", "DEPTH_ATTACHMENT", "STENCIL_ATTACHMENT", 
+            'DEPTH_STENCIL_ATTACHMENT', 'COLOR_ATTACHMENT1', 'COLOR_ATTACHMENT2', 'COLOR_ATTACHMENT3', 'COLOR_ATTACHMENT4', 'COLOR_ATTACHMENT5', 'COLOR_ATTACHMENT6', 'COLOR_ATTACHMENT7', 'COLOR_ATTACHMENT8', 'COLOR_ATTACHMENT9', 'COLOR_ATTACHMENT10', 'COLOR_ATTACHMENT11', 'COLOR_ATTACHMENT12', 'COLOR_ATTACHMENT13', 'COLOR_ATTACHMENT14', 'COLOR_ATTACHMENT15']:
+            raise AttributeError("Invalid attachement")
+
+        if textarget not in ['TEXTURE_2D', 'TEXTURE_CUBE_MAP_POSITIVE_X', 'TEXTURE_CUBE_MAP_NEGATIVE_X', 'TEXTURE_CUBE_MAP_POSITIVE_Y', 'TEXTURE_CUBE_MAP_NEGATIVE_Y', 'TEXTURE_CUBE_MAP_POSITIVE_Z', 'TEXTURE_CUBE_MAP_NEGATIVE_Z']:
+            raise AttributeError("Invalid textarget")
+
+        self._commands.append({
+            'cmd':'framebufferTexture2D', 
+            'target':target,
+            'attachement':attachement,
+            'textarget':textarget,
+            'texture':texture.uid,
+            'level':level
+        })
