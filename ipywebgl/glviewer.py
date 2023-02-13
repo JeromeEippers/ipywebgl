@@ -94,7 +94,7 @@ class GLViewer(DOMWidget):
             stencil_test (bool, optional): Activates stencil testing and updates to the stencil buffer. Defaults to False.
             rasterizer_discard (bool, optional): Primitives are discarded immediately before the rasterization stage, but after the optional transform feedback stage. Defaults to False.
         """
-        self.commands.append({'cmd':'enable', 
+        self._commands.append({'cmd':'enable', 
         'blend':blend,
         'cull_face':cull_face,
         'depth_test':depth_test,

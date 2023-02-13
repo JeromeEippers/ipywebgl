@@ -139,6 +139,7 @@ export class GLModel extends DOMWidgetModel {
           if (command.scissor_test) cap |= gl.SCISSOR_TEST;
           if (command.stencil_test) cap |= gl.STENCIL_TEST;
           if (command.rasterizer_discard) cap |= gl.RASTERIZER_DISCARD;
+          if (command.cull_face) cap |= gl.CULL_FACE;
           if (command.cmd == 'enable'){
             gl.enable(cap);
           } else{
