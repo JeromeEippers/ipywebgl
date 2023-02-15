@@ -125,13 +125,14 @@ export class GLModel extends DOMWidgetModel {
   }
 
   execute_command(gl:WebGL2RenderingContext, command:any, converted_buffers:any[], view_proj:Float32Array|null){
+    console.log(command);
     switch(command.cmd){
       case 'enable':
       case 'disable':
         {
           let cap = 0;
           if (command.blend) cap |= gl.BLEND;
-          if (command.depth_test) cap |= gl.DEPTH;
+          if (command.depth_test) cap |= gl.DEPTH_TEST;
           if (command.dither) cap |= gl.DITHER;
           if (command.polygon_offset_fill) cap |= gl.POLYGON_OFFSET_FILL;
           if (command.sample_alpha_to_coverage) cap |= gl.SAMPLE_ALPHA_TO_COVERAGE;

@@ -648,7 +648,7 @@ class GLViewer(DOMWidget):
         return resource
 
 
-    def create_program_ext(self, vertex_source:str, fargment_source:str, auto_execute=True) -> GLResourceWidget:
+    def create_program_ext(self, vertex_source:str, fargment_source:str, attribute_location:{}=None, auto_execute=True) -> GLResourceWidget:
         """Extended function to quickly create a program
 
             This will build the command buffer with all the needed commands for you.
@@ -659,6 +659,7 @@ class GLViewer(DOMWidget):
         Args:
             vertex_source (str): the vertex source code
             fargment_source (str): the shader source code
+            attribute_location( {str:int, ..}): the force attribute location if we don't want to use the default location.
             auto_execute (bool): do we execute all the commands automatically?
 
         Returns:
@@ -673,6 +674,10 @@ class GLViewer(DOMWidget):
         program = self.create_program()
         self.attach_shader(program, vertex_shader)
         self.attach_shader(program, fragment_shader)
+        if attribute_location is not None:
+            for key, value in attribute_location.items():
+                self.bind_attrib_location(program, value, key)
+
         self.link_program(program)
         self.use_program(None)
 
@@ -701,7 +706,7 @@ class GLViewer(DOMWidget):
             index (int): The index of the attribute variable to assign to the bound location.
             name (str): The name of the attribute variable.
         """
-        self._commands_buffer.append({
+        self._commands.append({
             'cmd':'bindAttribLocation', 
             'program':program.uid, 
             'index':index, 
