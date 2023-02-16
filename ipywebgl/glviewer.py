@@ -79,6 +79,15 @@ class GLViewer(DOMWidget):
         self._buffers  = []
 
 
+    def viewport(self, x:int, y:int, width:int, height:int):
+        self._commands.append({'cmd':'viewport', 
+            'x':x,
+            'y':y,
+            'width':width,
+            'height':height
+        })
+
+
     def enable(self, blend=False, cull_face=False, depth_test=False, dither=False, polygon_offset_fill=False, sample_alpha_to_coverage=False, sample_coverage=False, scissor_test=False, stencil_test=False, rasterizer_discard=False):
         """Append a enable command to the commands buffer
 
@@ -412,9 +421,10 @@ class GLViewer(DOMWidget):
         'R8', 'R8_SNORM', 'RG8', 'RG8_SNORM', 'RGB8', 'RGB8_SNORM', 'RGB565', 'RGBA4', 'RGB5_A1', 'RGBA8', 'RGBA8_SNORM', 'RGB10_A2', 'RGB10_A2UI', 'SRGB8', 'SRGB8_ALPHA8',
         'R16F', 'RG16F', 'RGB16F', 'RGBA16F', 'R32F', 'RG32F', 'RGB32F', 'RGBA32F', 'R11F_G11F_B10F', 'RGB9_E5',
         'R8I', 'R8UI', 'R16I', 'R16UI', 'R32I', 'R32UI', 'RG8I', 'RG8UI', 'RG16I', 'RG16UI', 'RG32I', 'RG32UI', 
-        'RGB8I', 'RGB8UI', 'RGB16I', 'RGB16UI', 'RGB32I', 'RGB32UI', 'RGBA8I', 'RGBA8UI', 'RGBA16I', 'RGBA16UI', 'RGBA32I', 'RGBA32UI']
+        'RGB8I', 'RGB8UI', 'RGB16I', 'RGB16UI', 'RGB32I', 'RGB32UI', 'RGBA8I', 'RGBA8UI', 'RGBA16I', 'RGBA16UI', 'RGBA32I', 'RGBA32UI',
+        'DEPTH_COMPONENT24', 'DEPTH_COMPONENT32F', 'DEPTH32F_STENCIL8', 'DEPTH24_STENCIL8']
 
-        format = ['RGB', 'RGBA', 'LUMINANCE_ALPHA', 'LUMINANCE', 'ALPHA', 'RED', 'RED_INTEGER', 'RG', 'RG_INTEGER', 'RGB', 'RGB_INTEGER', 'RGBA_INTEGER']
+        format = ['RGB', 'RGBA', 'LUMINANCE_ALPHA', 'LUMINANCE', 'ALPHA', 'RED', 'RED_INTEGER', 'RG', 'RG_INTEGER', 'RGB', 'RGB_INTEGER', 'RGBA_INTEGER', 'DEPTH_COMPONENT']
 
         data_type = ['UNSIGNED_BYTE', 'UNSIGNED_SHORT_5_6_5', 'UNSIGNED_SHORT_4_4_4_4', 'UNSIGNED_SHORT_5_5_5_1', 'BYTE', 'UNSIGNED_SHORT', 'SHORT', 'UNSIGNED_INT', 'INT', 'HALF_FLOAT', 'FLOAT', 'UNSIGNED_INT_2_10_10_10_REV', 'UNSIGNED_INT_10F_11F_11F_REV', 'UNSIGNED_INT_5_9_9_9_REV', 'UNSIGNED_INT_24_8', 'FLOAT_32_UNSIGNED_INT_24_8_REV']
 
@@ -440,32 +450,47 @@ class GLViewer(DOMWidget):
             'R8', 'R8_SNORM', 'RG8', 'RG8_SNORM', 'RGB8', 'RGB8_SNORM', 'RGB565', 'RGBA4', 'RGB5_A1', 'RGBA8', 'RGBA8_SNORM', 'RGB10_A2', 'RGB10_A2UI', 'SRGB8', 'SRGB8_ALPHA8',
             'R16F', 'RG16F', 'RGB16F', 'RGBA16F', 'R32F', 'RG32F', 'RGB32F', 'RGBA32F', 'R11F_G11F_B10F', 'RGB9_E5',
             'R8I', 'R8UI', 'R16I', 'R16UI', 'R32I', 'R32UI', 'RG8I', 'RG8UI', 'RG16I', 'RG16UI', 'RG32I', 'RG32UI', 
-            'RGB8I', 'RGB8UI', 'RGB16I', 'RGB16UI', 'RGB32I', 'RGB32UI', 'RGBA8I', 'RGBA8UI', 'RGBA16I', 'RGBA16UI', 'RGBA32I', 'RGBA32UI']:
+            'RGB8I', 'RGB8UI', 'RGB16I', 'RGB16UI', 'RGB32I', 'RGB32UI', 'RGBA8I', 'RGBA8UI', 'RGBA16I', 'RGBA16UI', 'RGBA32I', 'RGBA32UI',
+            'DEPTH_COMPONENT24', 'DEPTH_COMPONENT32F', 'DEPTH32F_STENCIL8', 'DEPTH24_STENCIL8']:
             raise AttributeError("Invalid internal_format")
 
-        if format not in ['RGB', 'RGBA', 'LUMINANCE_ALPHA', 'LUMINANCE', 'ALPHA', 'RED', 'RED_INTEGER', 'RG', 'RG_INTEGER', 'RGB', 'RGB_INTEGER', 'RGBA_INTEGER']:
+        if format not in ['RGB', 'RGBA', 'LUMINANCE_ALPHA', 'LUMINANCE', 'ALPHA', 'RED', 'RED_INTEGER', 'RG', 'RG_INTEGER', 'RGB', 'RGB_INTEGER', 'RGBA_INTEGER', 'DEPTH_COMPONENT']:
             raise AttributeError("Invalid format")
 
         if data_type not in ['UNSIGNED_BYTE', 'UNSIGNED_SHORT_5_6_5', 'UNSIGNED_SHORT_4_4_4_4', 'UNSIGNED_SHORT_5_5_5_1', 'BYTE', 'UNSIGNED_SHORT', 'SHORT', 'UNSIGNED_INT', 'INT', 'HALF_FLOAT', 'FLOAT', 'UNSIGNED_INT_2_10_10_10_REV', 'UNSIGNED_INT_10F_11F_11F_REV', 'UNSIGNED_INT_5_9_9_9_REV', 'UNSIGNED_INT_24_8', 'FLOAT_32_UNSIGNED_INT_24_8_REV']:
             raise AttributeError("Invalid data_type")
 
-        meta_data = {}
-        buffer = []
-        meta_data, buffer = array_to_buffer(pixel)
-        meta_data['index'] = len(self._buffers)
-        self._buffers.append(buffer)
-        self._commands.append({
-            'cmd':'texImage2D', 
-            'target':target,
-            'level': level,
-            'internal_format':internal_format, 
-            'width':width, 
-            'height':height, 
-            'border':border,
-            'format':format,
-            'data_type':data_type,
-            'buffer_metadata':meta_data
-        })
+        if pixel is not None:
+            meta_data = {}
+            buffer = []
+            meta_data, buffer = array_to_buffer(pixel)
+            meta_data['index'] = len(self._buffers)
+            self._buffers.append(buffer)
+            self._commands.append({
+                'cmd':'texImage2D', 
+                'target':target,
+                'level': level,
+                'internal_format':internal_format, 
+                'width':width, 
+                'height':height, 
+                'border':border,
+                'format':format,
+                'data_type':data_type,
+                'buffer_metadata':meta_data
+            })
+        else:
+            self._commands.append({
+                'cmd':'texImage2D', 
+                'target':target,
+                'level': level,
+                'internal_format':internal_format, 
+                'width':width, 
+                'height':height, 
+                'border':border,
+                'format':format,
+                'data_type':data_type,
+            })
+
 
     def tex_image_3d(self, target:str, level:int, internal_format:str, width:int, height:int, depth:int, border:int, format:str, data_type:str, pixel:np.array):
         """Append a texImage3D command
@@ -509,24 +534,38 @@ class GLViewer(DOMWidget):
         if data_type not in ['UNSIGNED_BYTE', 'UNSIGNED_SHORT_5_6_5', 'UNSIGNED_SHORT_4_4_4_4', 'UNSIGNED_SHORT_5_5_5_1', 'BYTE', 'UNSIGNED_SHORT', 'SHORT', 'UNSIGNED_INT', 'INT', 'HALF_FLOAT', 'FLOAT', 'UNSIGNED_INT_2_10_10_10_REV', 'UNSIGNED_INT_10F_11F_11F_REV', 'UNSIGNED_INT_5_9_9_9_REV', 'UNSIGNED_INT_24_8', 'FLOAT_32_UNSIGNED_INT_24_8_REV']:
             raise AttributeError("Invalid data_type")
 
-        meta_data = {}
-        buffer = []
-        meta_data, buffer = array_to_buffer(pixel)
-        meta_data['index'] = len(self._buffers)
-        self._buffers.append(buffer)
-        self._commands.append({
-            'cmd':'texImage3D', 
-            'target':target,
-            'level': level,
-            'internal_format':internal_format, 
-            'width':width, 
-            'height':height, 
-            'border':border,
-            'depth':depth,
-            'format':format,
-            'data_type':data_type,
-            'buffer_metadata':meta_data
-        })
+        if pixel is not None:
+            meta_data = {}
+            buffer = []
+            meta_data, buffer = array_to_buffer(pixel)
+            meta_data['index'] = len(self._buffers)
+            self._buffers.append(buffer)
+            self._commands.append({
+                'cmd':'texImage3D', 
+                'target':target,
+                'level': level,
+                'internal_format':internal_format, 
+                'width':width, 
+                'height':height, 
+                'border':border,
+                'depth':depth,
+                'format':format,
+                'data_type':data_type,
+                'buffer_metadata':meta_data
+            })
+        else:
+            self._commands.append({
+                'cmd':'texImage3D', 
+                'target':target,
+                'level': level,
+                'internal_format':internal_format, 
+                'width':width, 
+                'height':height, 
+                'border':border,
+                'depth':depth,
+                'format':format,
+                'data_type':data_type,
+            })
 
 
     def tex_parameter(self, target:str, pname:str, param):

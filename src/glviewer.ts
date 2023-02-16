@@ -125,8 +125,10 @@ export class GLModel extends DOMWidgetModel {
   }
 
   execute_command(gl:WebGL2RenderingContext, command:any, converted_buffers:any[], view_proj:Float32Array|null){
-    console.log(command);
     switch(command.cmd){
+      case 'viewport':
+          gl.viewport(command.x, command.y, command.width, command.height);
+        break;
       case 'enable':
       case 'disable':
         {
@@ -220,31 +222,61 @@ export class GLModel extends DOMWidgetModel {
         gl.generateMipmap((gl as any)[command.target]);
       break;
       case 'texImage2D':
-        gl.texImage2D(
-          (gl as any)[command.target],
-          command.level,
-          (gl as any)[command.internal_format],
-          command.width,
-          command.height,
-          command.border,
-          (gl as any)[command.format],
-          (gl as any)[command.data_type],
-          converted_buffers[command.buffer_metadata.index]
-        )
+        if (command.hasOwnProperty('buffer_metadata')){
+          gl.texImage2D(
+            (gl as any)[command.target],
+            command.level,
+            (gl as any)[command.internal_format],
+            command.width,
+            command.height,
+            command.border,
+            (gl as any)[command.format],
+            (gl as any)[command.data_type],
+            converted_buffers[command.buffer_metadata.index]
+          )
+        }
+        else{
+          gl.texImage2D(
+            (gl as any)[command.target],
+            command.level,
+            (gl as any)[command.internal_format],
+            command.width,
+            command.height,
+            command.border,
+            (gl as any)[command.format],
+            (gl as any)[command.data_type],
+            null
+          )
+        }
       break;
       case 'texImage3D':
-        gl.texImage3D(
-          (gl as any)[command.target],
-          command.level,
-          (gl as any)[command.internal_format],
-          command.width,
-          command.height,
-          command.depth,
-          command.border,
-          (gl as any)[command.format],
-          (gl as any)[command.data_type],
-          converted_buffers[command.buffer_metadata.index]
-        )
+        if (command.hasOwnProperty('buffer_metadata')){
+          gl.texImage3D(
+            (gl as any)[command.target],
+            command.level,
+            (gl as any)[command.internal_format],
+            command.width,
+            command.height,
+            command.depth,
+            command.border,
+            (gl as any)[command.format],
+            (gl as any)[command.data_type],
+            converted_buffers[command.buffer_metadata.index]
+          )
+        }else{
+          gl.texImage3D(
+            (gl as any)[command.target],
+            command.level,
+            (gl as any)[command.internal_format],
+            command.width,
+            command.height,
+            command.depth,
+            command.border,
+            (gl as any)[command.format],
+            (gl as any)[command.data_type],
+            null
+          )
+        }
       break;
       case 'texParameteri':
         gl.texParameteri((gl as any)[command.target], (gl as any)[command.pname], command.param);
