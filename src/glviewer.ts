@@ -52,6 +52,9 @@ export class GLModel extends DOMWidgetModel {
       gl.bufferData(gl.UNIFORM_BUFFER, 256, gl.DYNAMIC_DRAW);
       gl.bindBuffer(gl.UNIFORM_BUFFER, null);
       gl.bindBufferBase(gl.UNIFORM_BUFFER, 0, this.view_block);
+
+      //extensions to activate
+      gl.getExtension("EXT_color_buffer_float")
     }
 
     this.resizeCanvas();
@@ -246,8 +249,13 @@ export class GLModel extends DOMWidgetModel {
       }
       break;
       case 'bindTexture':{
-        const texture = this.get_resource(command.texture).get('_gl_ptr');
-        gl.bindTexture((gl as any)[command.target], texture);
+        if (command.texture > -1){
+          const texture = this.get_resource(command.texture).get('_gl_ptr');
+          gl.bindTexture((gl as any)[command.target], texture);
+        }
+        else{
+          gl.bindTexture((gl as any)[command.target], null);
+        }
       }
       break;
       case 'activeTexture':
@@ -419,7 +427,7 @@ export class GLModel extends DOMWidgetModel {
           else{
             //bind our viewBlock
             let viewBlockIndex = gl.getUniformBlockIndex(ptr, 'ViewBlock');
-            if (viewBlockIndex>-1){
+            if (viewBlockIndex < 4294967295){
               gl.uniformBlockBinding(ptr, viewBlockIndex, 0);
             }
             resinfo.message = 'linked';

@@ -370,7 +370,7 @@ class GLViewer(DOMWidget):
         return resource
 
 
-    def bind_texture(self, target:str, texture:GLResourceWidget):
+    def bind_texture(self, target:str, texture:GLResourceWidget=None):
         """Append a bindTexture command to the command list
 
         Args:
@@ -379,9 +379,12 @@ class GLViewer(DOMWidget):
         """
         if target not in ["TEXTURE_2D", "TEXTURE_CUBE_MAP", "TEXTURE_3D", "TEXTURE_2D_ARRAY"]:
             raise AttributeError("Invalid target")
+        uid = -1
+        if texture is not None:
+            uid = texture.uid
         self._commands.append({
             'cmd':'bindTexture', 
-            'texture':texture.uid, 
+            'texture':uid, 
             'target':target
         })
 
