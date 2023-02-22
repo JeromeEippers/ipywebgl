@@ -45,6 +45,14 @@ export class GLModel extends DOMWidgetModel {
     if (this.ctx == null){
       console.error('could not create a webgl2 context, this is not supported in your browser');
     }
+    else{
+      const gl:WebGL2RenderingContext = this.ctx;
+      this.view_block = gl.createBuffer();
+      gl.bindBuffer(gl.UNIFORM_BUFFER, this.view_block);
+      gl.bufferData(gl.UNIFORM_BUFFER, 256, gl.DYNAMIC_DRAW);
+      gl.bindBuffer(gl.UNIFORM_BUFFER, null);
+      gl.bindBufferBase(gl.UNIFORM_BUFFER, 0, this.view_block);
+    }
 
     this.resizeCanvas();
     this.on_some_change(['width', 'height'], this.resizeCanvas, this);
@@ -104,6 +112,7 @@ export class GLModel extends DOMWidgetModel {
     this.camera_matrix = m4dot(this.camera_matrix, m4Yrotation(yaw));
     this.camera_matrix = m4dot(this.camera_matrix, m4Xrotation(pitch));
     this.view_matrix = m4inverse(this.camera_matrix);
+    this.view_proj_matrix = m4dot(this.projection_matrix, this.view_matrix);
   }
 
   run_commands(){
@@ -115,12 +124,26 @@ export class GLModel extends DOMWidgetModel {
     const gl:WebGL2RenderingContext = this.ctx;
 
     this.update_camera();
-    this.view_proj_matrix = m4dot(this.projection_matrix, this.view_matrix);
-    let vp = (this.get('shader_matrix_major')=='row_major')? m4Transpose(this.view_proj_matrix): this.view_proj_matrix;
-    const view_proj_f32 = new Float32Array(vp);
+
+    // update the uniform Block
+    let cm = (this.get('shader_matrix_major')=='row_major')? m4Transpose(this.camera_matrix): this.camera_matrix;
+    const cm_f32 = new Float32Array(cm);
+    let vm = (this.get('shader_matrix_major')=='row_major')? m4Transpose(this.view_matrix): this.view_matrix;
+    const vm_f32 = new Float32Array(vm);
+    let pm = (this.get('shader_matrix_major')=='row_major')? m4Transpose(this.projection_matrix): this.projection_matrix;
+    const pm_f32 = new Float32Array(pm);
+    let vpm = (this.get('shader_matrix_major')=='row_major')? m4Transpose(this.view_proj_matrix): this.view_proj_matrix;
+    const vpm_f32 = new Float32Array(vpm);
+
+    gl.bindBuffer(gl.UNIFORM_BUFFER, this.view_block);
+    gl.bufferSubData(gl.UNIFORM_BUFFER, 0, cm_f32, 0);
+    gl.bufferSubData(gl.UNIFORM_BUFFER, 64, vm_f32, 0);
+    gl.bufferSubData(gl.UNIFORM_BUFFER, 128, pm_f32, 0);
+    gl.bufferSubData(gl.UNIFORM_BUFFER, 192, vpm_f32, 0);
+    gl.bindBuffer(gl.UNIFORM_BUFFER, null);
 
     commands.forEach((command:any)=>{
-      this.execute_command(gl, command, converted_buffers, view_proj_f32);
+      this.execute_command(gl, command, converted_buffers);
     });
   }
 
@@ -134,7 +157,7 @@ export class GLModel extends DOMWidgetModel {
     return keys.length ? keys.join(' | ') : `0x${value.toString(16)}`;
   }
 
-  execute_command(gl:WebGL2RenderingContext, command:any, converted_buffers:any[], view_proj:Float32Array|null){
+  execute_command(gl:WebGL2RenderingContext, command:any, converted_buffers:any[]){
     //console.log(command);
     //console.log(this.bound_buffers);
     switch(command.cmd){
@@ -394,6 +417,11 @@ export class GLModel extends DOMWidgetModel {
             resinfo.message = info;
           }
           else{
+            //bind our viewBlock
+            let viewBlockIndex = gl.getUniformBlockIndex(ptr, 'ViewBlock');
+            if (viewBlockIndex>-1){
+              gl.uniformBlockBinding(ptr, viewBlockIndex, 0);
+            }
             resinfo.message = 'linked';
             resinfo.uniforms_blocks = [];
             resinfo.uniforms = [];
@@ -442,10 +470,6 @@ export class GLModel extends DOMWidgetModel {
             const ptr = res.get('_gl_ptr');
             gl.useProgram(ptr);
             this.bound_program = res;
-
-            //by default we can push the view projection on the program
-            this.execute_command(gl, {cmd:'uniformMatrix', name:'ViewProjection', buffer_metadata:{shape:[4,4], index:0}}, [view_proj], null);
-
           } else {
             gl.useProgram(null);
             this.bound_program = null;
@@ -793,6 +817,7 @@ export class GLModel extends DOMWidgetModel {
 
   canvas: HTMLCanvasElement;
   ctx: WebGL2RenderingContext | null;
+  view_block: WebGLBuffer | null;
 
   resources : GLResource[] = [];
   bound_program: GLResource | null;
