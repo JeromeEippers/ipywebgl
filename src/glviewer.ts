@@ -124,7 +124,19 @@ export class GLModel extends DOMWidgetModel {
     });
   }
 
+  glEnumToString(gl:WebGL2RenderingContext, value:any) {
+    const keys = [];
+    for (const key in gl) {
+      if ((gl as any)[key] === value) {
+        keys.push(key);
+      }
+    }
+    return keys.length ? keys.join(' | ') : `0x${value.toString(16)}`;
+  }
+
   execute_command(gl:WebGL2RenderingContext, command:any, converted_buffers:any[], view_proj:Float32Array|null){
+    //console.log(command);
+    //console.log(this.bound_buffers);
     switch(command.cmd){
       case 'viewport':
           gl.viewport(command.x, command.y, command.width, command.height);
@@ -249,6 +261,16 @@ export class GLModel extends DOMWidgetModel {
           )
         }
       break;
+      case 'texStorage2D':{
+        gl.texStorage2D(
+          (gl as any)[command.target],
+          command.levels,
+          (gl as any)[command.internal_format],
+          command.width,
+          command.height
+        );
+      }
+      break;
       case 'texImage3D':
         if (command.hasOwnProperty('buffer_metadata')){
           gl.texImage3D(
@@ -278,6 +300,17 @@ export class GLModel extends DOMWidgetModel {
           )
         }
       break;
+      case 'texStorage3D':{
+        gl.texStorage3D(
+          (gl as any)[command.target],
+          command.levels,
+          (gl as any)[command.internal_format],
+          command.width,
+          command.height,
+          command.depth
+        );
+      }
+      break;
       case 'texParameteri':
         gl.texParameteri((gl as any)[command.target], (gl as any)[command.pname], command.param);
       break;
@@ -286,6 +319,15 @@ export class GLModel extends DOMWidgetModel {
       break;
       case 'texParameter_str':
         gl.texParameteri((gl as any)[command.target], (gl as any)[command.pname], (gl as any)[command.param]);
+      break;
+      case 'pixelStorei':{
+        if (command.pname == 'UNPACK_COLORSPACE_CONVERSION_WEBGL'){
+          gl.pixelStorei((gl as any)[command.pname], (gl as any)[command.param]);
+        }
+        else{
+          gl.pixelStorei((gl as any)[command.pname], command.param);
+        }
+      }
       break;
       // ------------------------------- SHADERS --------------------------------------
       case 'createShader':{
@@ -353,19 +395,41 @@ export class GLModel extends DOMWidgetModel {
           }
           else{
             resinfo.message = 'linked';
+            resinfo.uniforms_blocks = [];
             resinfo.uniforms = [];
             const numUniforms = gl.getProgramParameter(ptr, gl.ACTIVE_UNIFORMS);
+            const indices = [...Array(numUniforms).keys()];
+            const blockIndices = gl.getActiveUniforms(ptr, indices, gl.UNIFORM_BLOCK_INDEX);
+            const offsets = gl.getActiveUniforms(ptr, indices, gl.UNIFORM_OFFSET);
             for (let i = 0; i < numUniforms; ++i) {
               const info = gl.getActiveUniform(ptr, i);
-              if (info)
-                resinfo.uniforms.push({name:info.name, type:info.type, size:info.size, location:gl.getUniformLocation(ptr, info.name)});
+              if (info){
+                // regroup the blocks
+                if (blockIndices[i]>-1){
+                  let uniform_block = resinfo.uniforms_blocks.find((element:any)=>{return element.index == blockIndices[i]});
+                  if (uniform_block == undefined){
+                    uniform_block = {
+                      index:blockIndices[i], 
+                      name:gl.getActiveUniformBlockName(ptr, blockIndices[i]), 
+                      size:gl.getActiveUniformBlockParameter(ptr, blockIndices[i], gl.UNIFORM_BLOCK_DATA_SIZE),
+                      uniforms:[]};
+                    resinfo.uniforms_blocks.push(uniform_block);
+                  }
+                  uniform_block.uniforms.push(
+                    {name:info.name, type:this.glEnumToString(gl, info.type), size:info.size, offset:offsets[i]}
+                  )
+                }
+                else{
+                  resinfo.uniforms.push({name:info.name, type:this.glEnumToString(gl, info.type), size:info.size, location:gl.getUniformLocation(ptr, info.name)});
+                }
+              }
             }
             resinfo.attributes = [];
             const numAttribute = gl.getProgramParameter(ptr, gl.ACTIVE_ATTRIBUTES);
             for (let i = 0; i < numAttribute; ++i) {
               const info = gl.getActiveAttrib(ptr, i);
               if (info)
-                resinfo.attributes.push({name:info.name, type:info.type, size:info.size, location:gl.getAttribLocation(ptr, info.name)});
+                resinfo.attributes.push({name:info.name, type:this.glEnumToString(gl, info.type), size:info.size, location:gl.getAttribLocation(ptr, info.name)});
             }
           }
           res.set('_info', resinfo);
@@ -449,6 +513,15 @@ export class GLModel extends DOMWidgetModel {
           }
         }
       break;
+      case 'uniformBlockBinding':{
+        let res = this.get_resource(command.program);
+        const ptr = res.get('_gl_ptr');
+        const uniformblock = res.get('_info').uniforms_blocks.find((element:any)=>{return element.name == command.uniform_block_name});
+        if (uniformblock != undefined){
+          gl.uniformBlockBinding(ptr, uniformblock.index, command.uniform_block_binding);
+        }
+      }
+      break;
       // ------------------------------- BUFFERS --------------------------------------
       case 'createBuffer':{
           let res = this.get_resource(command.resource);
@@ -464,10 +537,21 @@ export class GLModel extends DOMWidgetModel {
             const res = this.get_resource(command.buffer);
             const ptr = res.get('_gl_ptr');
             gl.bindBuffer((gl as any)[target], ptr);
-            this.bound_buffer = res;
+            (this.bound_buffers as any)[target] = res;
           } else {
             gl.bindBuffer((gl as any)[target], null);
-            this.bound_buffer = null;
+            (this.bound_buffers as any)[target]  = null;
+          }
+        }
+        break;
+      case 'bindBufferBase':{
+          const target:string = command.target;
+          if(command.buffer >= 0){
+            const res = this.get_resource(command.buffer);
+            const ptr = res.get('_gl_ptr');
+            gl.bindBufferBase((gl as any)[target], command.index, ptr);
+          } else {
+            gl.bindBufferBase((gl as any)[target], command.index, null);
           }
         }
         break;
@@ -478,30 +562,65 @@ export class GLModel extends DOMWidgetModel {
           if (command.hasOwnProperty('buffer_metadata')){
             gl.bufferData((gl as any)[target], converted_buffers[command.buffer_metadata.index], (gl as any)[usage]);
 
-            if (command.update_info && this.bound_buffer != null){
+            let buf = (this.bound_buffers as any)[target];
+            if (command.update_info && buf != null){
               const size = gl.getBufferParameter((gl as any)[target], gl.BUFFER_SIZE);
-              this.bound_buffer.set('_info', {type:"Buffer", size:size, target:target});
-              this.bound_buffer.save_changes();
+              buf.set('_info', {type:"Buffer", size:size, target:target});
+              buf.save_changes();
             }
           }
           else{
+            let buf = (this.bound_buffers as any)[target];
             gl.bufferData((gl as any)[target], null, (gl as any)[usage]);
-            if (command.update_info && this.bound_buffer != null){
-              this.bound_buffer.set('_info', {type:"Buffer", size:'Undefined', target:target});
-              this.bound_buffer.save_changes();
+            if (command.update_info && buf != null){
+              buf.set('_info', {type:"Buffer", size:'Undefined', target:target});
+              buf.save_changes();
             }
           }
         }
         break;
-      case 'bufferSubData':{
-          const target:string = command.target;
+      case 'createUniformBuffer':{
+          let res = this.get_resource(command.buffer);
+          const ptr = gl.createBuffer();
 
+          let info = {type:'Buffer'};
+          const prog = this.get_resource(command.program);
+          const uniformblock = prog.get('_info').uniforms_blocks.find((element:any)=>{return element.name == command.block_name});
+          if (uniformblock != undefined){
+            gl.bindBuffer(gl.UNIFORM_BUFFER, ptr);
+            gl.bufferData(gl.UNIFORM_BUFFER, uniformblock.size, (gl as any)[command.usage]);
+            gl.bindBuffer(gl.UNIFORM_BUFFER, null);
+            (this.bound_buffers as any)["UNIFORM_BUFFER"] = null;
+            (info as any)["size"] = uniformblock.size;
+            (info as any)["target"] = "UNIFORM_BUFFER";
+            (info as any)["uniformblock"] = uniformblock;
+          }
+          res.set('_gl_ptr', ptr);
+          res.set('_info', info);
+          res.save_changes();
+        }
+        break;
+      case 'bufferSubData':
+      case 'bufferSubDataStr':{
+          const target:string = command.target;
+          let offset = command.dst_byte_offset;
+          if (command.cmd == 'bufferSubDataStr'){
+            offset = 0;
+            let buf = (this.bound_buffers as any)[target];
+            if (buf != null){
+              const uniformblock = buf.get('_info').uniformblock;
+              const uniform = uniformblock.uniforms.find((element:any)=>{return element.name == command.dst_byte_offset});
+              if (uniform != undefined){
+                offset = uniform.offset;
+              }
+            }
+          }
           if (command.hasOwnProperty('buffer_metadata')){
-            gl.bufferSubData((gl as any)[target], command.dst_byte_offset, converted_buffers[command.buffer_metadata.index], command.src_offset);
+            gl.bufferSubData((gl as any)[target], offset, converted_buffers[command.buffer_metadata.index], command.src_offset);
 
           }
           else{
-            gl.bufferSubData((gl as any)[target], command.dst_byte_offset, command.src_offset);
+            gl.bufferSubData((gl as any)[target], offset, command.src_offset);
           }
         }
         break;
@@ -547,12 +666,13 @@ export class GLModel extends DOMWidgetModel {
               console.error("a program must be bound to find the attribute");
             }
           }
+          let buf = (this.bound_buffers as any)['ARRAY_BUFFER'];
           if (index >= 0){
             if (command.cmd == "vertexAttribIPointer"){
               gl.vertexAttribIPointer(index, command.size, (gl as any)[command.type], command.stride, command.offset);
-              if (this.bound_vao != null && this.bound_buffer != null){
+              if (this.bound_vao != null && buf != null){
                 let vao_info = this.bound_vao.get('_info');
-                const buffer_uid = this.bound_buffer.get('uid');
+                const buffer_uid = buf.get('uid');
                 let binding_info = vao_info.bindings.find((element:any)=>{return element.buffer_uid == buffer_uid});
                 if (binding_info == undefined){
                   binding_info = {buffer_uid : buffer_uid, attributes : []};
@@ -565,9 +685,9 @@ export class GLModel extends DOMWidgetModel {
             }
             else if (command.cmd == "vertexAttribPointer"){
               gl.vertexAttribPointer(index, command.size, (gl as any)[command.type], command.normalized, command.stride, command.offset);
-              if (this.bound_vao != null && this.bound_buffer != null){
+              if (this.bound_vao != null && buf != null){
                 let vao_info = this.bound_vao.get('_info');
-                const buffer_uid = this.bound_buffer.get('uid');
+                const buffer_uid = buf.get('uid');
                 let binding_info = vao_info.bindings.find((element:any)=>{return element.buffer_uid == buffer_uid});
                 if (binding_info == undefined){
                   binding_info = {buffer_uid : buffer_uid, attributes : []};
@@ -651,6 +771,12 @@ export class GLModel extends DOMWidgetModel {
           gl.framebufferTexture2D((gl as any)[command.target], (gl as any)[command.attachement], (gl as any)[command.textarget], res.get('_gl_ptr'), command.level);
         }
         break;
+        case 'drawBuffers' :{
+          const buffers = command.buffers.map((element:any)=>{return (gl as any)[element]; });
+          gl.drawBuffers(buffers);
+        }
+        break;
+        
     }
   }
 
@@ -670,7 +796,7 @@ export class GLModel extends DOMWidgetModel {
 
   resources : GLResource[] = [];
   bound_program: GLResource | null;
-  bound_buffer: GLResource | null;
+  bound_buffers = {};
   bound_vao: GLResource | null;
   commands : any[] = [];
   buffers : any[] = [];

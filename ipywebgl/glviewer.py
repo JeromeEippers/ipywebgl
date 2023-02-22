@@ -451,7 +451,7 @@ class GLViewer(DOMWidget):
             'R16F', 'RG16F', 'RGB16F', 'RGBA16F', 'R32F', 'RG32F', 'RGB32F', 'RGBA32F', 'R11F_G11F_B10F', 'RGB9_E5',
             'R8I', 'R8UI', 'R16I', 'R16UI', 'R32I', 'R32UI', 'RG8I', 'RG8UI', 'RG16I', 'RG16UI', 'RG32I', 'RG32UI', 
             'RGB8I', 'RGB8UI', 'RGB16I', 'RGB16UI', 'RGB32I', 'RGB32UI', 'RGBA8I', 'RGBA8UI', 'RGBA16I', 'RGBA16UI', 'RGBA32I', 'RGBA32UI',
-            'DEPTH_COMPONENT24', 'DEPTH_COMPONENT32F', 'DEPTH32F_STENCIL8', 'DEPTH24_STENCIL8']:
+            'DEPTH_COMPONENT16', 'DEPTH_COMPONENT24', 'DEPTH_COMPONENT32F', 'DEPTH32F_STENCIL8', 'DEPTH24_STENCIL8']:
             raise AttributeError("Invalid internal_format")
 
         if format not in ['RGB', 'RGBA', 'LUMINANCE_ALPHA', 'LUMINANCE', 'ALPHA', 'RED', 'RED_INTEGER', 'RG', 'RG_INTEGER', 'RGB', 'RGB_INTEGER', 'RGBA_INTEGER', 'DEPTH_COMPONENT']:
@@ -491,6 +491,22 @@ class GLViewer(DOMWidget):
                 'data_type':data_type,
             })
 
+
+    def tex_storage_2d(self, target:str, levels:int, internal_format:str, width:int, height:int):
+        if target not in ['TEXTURE_2D', 'TEXTURE_CUBE_MAP']:
+            raise AttributeError("Invalid target")
+        if internal_format not in ["R8", "R16F", "R32F", "R8UI", "RG8", "RG16F", "RG32F", "RG8UI", "RGB8", "SRGB8", "RGB565", "R11F_G11F_B10F", "RGB9_E5", "RGB16F", "RGB32F", "RGB8UI", "RGBA8", "SRGB8_ALPHA8", "RGB5_A1", "RGBA4", "RGBA16F", "RGBA32F", "RGBA8UI",
+            'DEPTH_COMPONENT16', 'DEPTH_COMPONENT24', 'DEPTH_COMPONENT32F', 'DEPTH32F_STENCIL8', 'DEPTH24_STENCIL8']:
+            raise AttributeError("Invalid internal_format")
+
+        self._commands.append({
+            'cmd':'texStorage2D', 
+            'target':target,
+            'levels':levels,
+            'internal_format':internal_format,
+            'width':width,
+            'height':height
+        })
 
     def tex_image_3d(self, target:str, level:int, internal_format:str, width:int, height:int, depth:int, border:int, format:str, data_type:str, pixel:np.array):
         """Append a texImage3D command
@@ -568,6 +584,23 @@ class GLViewer(DOMWidget):
             })
 
 
+    def tex_storage_3d(self, target:str, levels:int, internal_format:str, width:int, height:int, depth:int):
+        if target not in ['TEXTURE_3D', 'TEXTURE_2D_ARRAY']:
+            raise AttributeError("Invalid target")
+        if internal_format not in ["R8", "R16F", "R32F", "R8UI", "RG8", "RG16F", "RG32F", "RG8UI", "RGB8", "SRGB8", "RGB565", "R11F_G11F_B10F", "RGB9_E5", "RGB16F", "RGB32F", "RGB8UI", "RGBA8", "SRGB8_ALPHA8", "RGB5_A1", "RGBA4", "RGBA16F", "RGBA32F", "RGBA8UI"]:
+            raise AttributeError("Invalid internal_format")
+
+        self._commands.append({
+            'cmd':'texStorage3D', 
+            'target':target,
+            'levels':levels,
+            'internal_format':internal_format,
+            'width':width,
+            'height':height,
+            'depth':depth
+        })
+
+
     def tex_parameter(self, target:str, pname:str, param):
         """Append a texParameteri or texParameterf to the command list
 
@@ -618,6 +651,19 @@ class GLViewer(DOMWidget):
                 'param':param
             })
 
+
+    def pixel_store_i(self, pname:str, param):
+        if pname not in ["PACK_ALIGNMENT", "UNPACK_ALIGNMENT", "UNPACK_FLIP_Y_WEBGL", "UNPACK_PREMULTIPLY_ALPHA_WEBGL", "UNPACK_COLORSPACE_CONVERSION_WEBGL", "PACK_ROW_LENGTH", "PACK_SKIP_PIXELS", "PACK_SKIP_ROWS", "UNPACK_ROW_LENGTH", "UNPACK_IMAGE_HEIGHT", "UNPACK_SKIP_PIXELS", "UNPACK_SKIP_ROWS", "UNPACK_SKIP_IMAGES"]:
+            raise AttributeError("Invalid pname")
+
+        if pname == "UNPACK_COLORSPACE_CONVERSION_WEBGL" and param not in ["BROWSER_DEFAULT_WEBGL", "NONE"]:
+            raise AttributeError("Invalid param")
+
+        self._commands.append({
+            'cmd':'pixelStorei', 
+            'pname':target,
+            'param':param,
+        })
 
 
     def create_shader(self, shadertype:str) -> GLResourceWidget:
@@ -811,6 +857,15 @@ class GLViewer(DOMWidget):
         })
 
 
+    def uniform_block_binding(self, program:GLResourceWidget, uniform_block_name:str, uniform_block_binding:int):
+        self._commands.append({
+            'cmd': 'uniformBlockBinding',
+            'program': program.uid,
+            'uniform_block_name':uniform_block_name,
+            'uniform_block_binding':uniform_block_binding
+        })
+
+
     def create_buffer(self) -> GLResourceWidget:
         """Append a createBuffer command to the command list
 
@@ -854,6 +909,37 @@ class GLViewer(DOMWidget):
         return buffer
 
 
+    def create_uniform_buffer_ext(self, program:GLResourceWidget, block_name:str, usage='STATIC_DRAW', auto_execute=True) -> GLResourceWidget:
+        """create a uniform buffer
+
+        We have to use this funciton to create a uniform buffer because the type of data passed to the buffer
+        is out of sync with the front end.
+
+        Args:
+            program (GLResourceWidget,): the program where the block is found.
+            block_name (str): the name of the block. Defaults to None.
+            usage (str, optional): _description_. Defaults to 'STATIC_DRAW'.
+            auto_execute(bool, optional): do we execute the commands. Defaults to True
+
+        Returns:
+            GLResourceWidget: the resource for the buffer
+        """
+        uid = len(self._resources)
+        resource = GLResourceWidget(_context=self, uid=uid)
+        self._resources.append(resource)
+        self._commands.append({
+            'cmd':'createUniformBuffer', 
+            'program':program.uid, 
+            'block_name':block_name,
+            'usage':usage,
+            'buffer':uid
+        })
+        if auto_execute:
+            self.execute_commands(execute_once=True)
+
+        return resource
+
+
     def bind_buffer(self, target: str="ARRAY_BUFFER", buffer: GLResourceWidget=None):
         """Append a bindBuffer command to the command list
 
@@ -888,12 +974,27 @@ class GLViewer(DOMWidget):
         })
 
 
+    def bind_buffer_base(self, target:str, index:int, buffer:GLResourceWidget=None):
+        if target not in ["TRANSFORM_FEEDBACK_BUFFER", "UNIFORM_BUFFER"]:
+            raise AttributeError("Invalid target")
+
+        uid = -1
+        if (buffer is not None):
+            uid = buffer.uid
+        self._commands.append({
+            'cmd':'bindBufferBase', 
+            'target':target, 
+            'index':index,
+            'buffer':uid
+        })
+
+
     def buffer_data(self, target='ARRAY_BUFFER', src_data=None, usage='STATIC_DRAW', update_info=False):
         """Append a bufferData command to the command list
 
         Args:
             target (str, optional): _description_. Defaults to 'ARRAY_BUFFER'.
-            src_data (np.array, optional): the data to send. Defaults to None.
+            src_data (np.array, optional): the data to send. Defaults to None. 
             usage (str, optional): _description_. Defaults to 'STATIC_DRAW'.
             update_info(bool, optional): do we update the buffer info that are displayed in the widget. Defaults to False
 
@@ -905,6 +1006,9 @@ class GLViewer(DOMWidget):
             raise AttributeError("Invalid target")
         if usage not in ["STATIC_DRAW", "DYNAMIC_DRAW", "STREAM_DRAW", "STATIC_READ", "DYNAMIC_READ", "STREAM_READ", "STATIC_COPY", "DYNAMIC_COPY", "STREAM_COPY"]:
             raise AttributeError("Invalid usage")
+
+        if isinstance(src_data, str) and target != "UNIFORM_BUFFER":
+            raise AttributeError("src_data can be a string only if we are passing a UNIFORM_BUFFER")
 
         meta_data = {}
         buffer = []
@@ -933,7 +1037,7 @@ class GLViewer(DOMWidget):
             target values : ["ARRAY_BUFFER", "ELEMENT_ARRAY_BUFFER", "COPY_READ_BUFFER", "COPY_WRITE_BUFFER", "TRANSFORM_FEEDBACK_BUFFER", "UNIFORM_BUFFER"]
         Args:
             target (str, optional): specifying the binding point (target). Defaults to 'ARRAY_BUFFER'.
-            dst_byte_offset (int, optional): specifying an offset in bytes where the data replacement will start. Defaults to 0.
+            dst_byte_offset (int | str, optional): specifying an offset in bytes where the data replacement will start. in the case of UNIFORM_BUFFER, it can be a string with name of the uniform. Defaults to 0.
             src_data (np.array, optional): the array that will be copied into the data store. Defaults to None.
             src_offset (int, optional): specifying the element index offset where to start reading the buffer. Defaults to 0.
 
@@ -945,12 +1049,17 @@ class GLViewer(DOMWidget):
 
         meta_data = {}
         buffer = []
+
+        command = 'bufferSubData'
+        if (isinstance(dst_byte_offset, str)):
+            command = 'bufferSubDataStr'
+
         if (src_data is not None):
             meta_data, buffer = array_to_buffer(src_data)
             meta_data['index'] = len(self._buffers)
             self._buffers.append(buffer)
             self._commands.append({
-                'cmd':'bufferSubData', 
+                'cmd':command, 
                 'target':target, 
                 'dst_byte_offset':dst_byte_offset, 
                 'src_offset':src_offset, 
@@ -958,7 +1067,7 @@ class GLViewer(DOMWidget):
             })
         else:
             self._commands.append({
-                'cmd':'bufferSubData', 
+                'cmd':command, 
                 'target':target, 
                 'dst_byte_offset':dst_byte_offset, 
                 'src_offset':src_offset, 
@@ -1051,8 +1160,6 @@ class GLViewer(DOMWidget):
         return vao
         
             
-
-
     def bind_vertex_array(self, vertex_array:GLResourceWidget=None):
         """Append a bindVertexArray command to the commands buffer.
 
@@ -1339,4 +1446,15 @@ class GLViewer(DOMWidget):
             'textarget':textarget,
             'texture':texture.uid,
             'level':level
+        })
+
+    
+    def draw_buffers(self, buffers):
+        for buf in buffers:
+            if buf not in ["NONE", "BACK", "COLOR_ATTACHMENT0", 'COLOR_ATTACHMENT1', 'COLOR_ATTACHMENT2', 'COLOR_ATTACHMENT3', 'COLOR_ATTACHMENT4', 'COLOR_ATTACHMENT5', 'COLOR_ATTACHMENT6', 'COLOR_ATTACHMENT7', 'COLOR_ATTACHMENT8', 'COLOR_ATTACHMENT9', 'COLOR_ATTACHMENT10', 'COLOR_ATTACHMENT11', 'COLOR_ATTACHMENT12', 'COLOR_ATTACHMENT13', 'COLOR_ATTACHMENT14', 'COLOR_ATTACHMENT15']:
+                raise AttributeError("Invalid buffers")
+
+        self._commands.append({
+            'cmd':'drawBuffers', 
+            'buffers':buffers
         })
