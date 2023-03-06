@@ -55,6 +55,15 @@ class GLViewer(DOMWidget):
         self._buffers = []
 
 
+    def resource(self, index):
+        """return the resource used by the viewer"""
+        return self._resources[index]
+
+    def resource_count(self):
+        """return the number of resources used by the viewer"""
+        return len(self._resources)
+
+
     def execute_commands(self, execute_once=False, clear_previous=True):
         """Send the commands buffer to the webgl frontend.
 
@@ -496,6 +505,22 @@ class GLViewer(DOMWidget):
 
 
     def tex_storage_2d(self, target:str, levels:int, internal_format:str, width:int, height:int):
+        """append a texStorage2D command
+
+        internal format : ["R8", "R16F", "R32F", "R8UI", "RG8", "RG16F", "RG32F", "RG8UI", "RGB8", "SRGB8", "RGB565", "R11F_G11F_B10F", "RGB9_E5", "RGB16F", "RGB32F", "RGB8UI", "RGBA8", "SRGB8_ALPHA8", "RGB5_A1", "RGBA4", "RGBA16F", "RGBA32F", "RGBA8UI",
+            'DEPTH_COMPONENT16', 'DEPTH_COMPONENT24', 'DEPTH_COMPONENT32F', 'DEPTH32F_STENCIL8', 'DEPTH24_STENCIL8']
+
+        Args:
+            target (str): 'TEXTURE_2D', 'TEXTURE_CUBE_MAP'
+            levels (int): the number of mipmap
+            internal_format (str): the internal format
+            width (int): the width of the texture
+            height (int): the heifht of the texture
+
+        Raises:
+            AttributeError: _description_
+            AttributeError: _description_
+        """
         if target not in ['TEXTURE_2D', 'TEXTURE_CUBE_MAP']:
             raise AttributeError("Invalid target")
         if internal_format not in ["R8", "R16F", "R32F", "R8UI", "RG8", "RG16F", "RG32F", "RG8UI", "RGB8", "SRGB8", "RGB565", "R11F_G11F_B10F", "RGB9_E5", "RGB16F", "RGB32F", "RGB8UI", "RGBA8", "SRGB8_ALPHA8", "RGB5_A1", "RGBA4", "RGBA16F", "RGBA32F", "RGBA8UI",
@@ -588,6 +613,19 @@ class GLViewer(DOMWidget):
 
 
     def tex_storage_3d(self, target:str, levels:int, internal_format:str, width:int, height:int, depth:int):
+        """Append a texStorage3D command
+
+        Args:
+            target (str): 'TEXTURE_3D', 'TEXTURE_2D_ARRAY'
+            levels (int): the number of mipmap
+            internal_format (str): the internal format
+            width (int): the width of the texture
+            height (int): the heifht of the texture
+
+        Raises:
+            AttributeError: _description_
+            AttributeError: _description_
+        """
         if target not in ['TEXTURE_3D', 'TEXTURE_2D_ARRAY']:
             raise AttributeError("Invalid target")
         if internal_format not in ["R8", "R16F", "R32F", "R8UI", "RG8", "RG16F", "RG32F", "RG8UI", "RGB8", "SRGB8", "RGB565", "R11F_G11F_B10F", "RGB9_E5", "RGB16F", "RGB32F", "RGB8UI", "RGBA8", "SRGB8_ALPHA8", "RGB5_A1", "RGBA4", "RGBA16F", "RGBA32F", "RGBA8UI"]:
@@ -656,6 +694,8 @@ class GLViewer(DOMWidget):
 
 
     def pixel_store_i(self, pname:str, param):
+        """Append a pixelStorei command
+        """
         if pname not in ["PACK_ALIGNMENT", "UNPACK_ALIGNMENT", "UNPACK_FLIP_Y_WEBGL", "UNPACK_PREMULTIPLY_ALPHA_WEBGL", "UNPACK_COLORSPACE_CONVERSION_WEBGL", "PACK_ROW_LENGTH", "PACK_SKIP_PIXELS", "PACK_SKIP_ROWS", "UNPACK_ROW_LENGTH", "UNPACK_IMAGE_HEIGHT", "UNPACK_SKIP_PIXELS", "UNPACK_SKIP_ROWS", "UNPACK_SKIP_IMAGES"]:
             raise AttributeError("Invalid pname")
 
@@ -861,6 +901,8 @@ class GLViewer(DOMWidget):
 
 
     def uniform_block_binding(self, program:GLResourceWidget, uniform_block_name:str, uniform_block_binding:int):
+        """Append a uniformBlockBinding command
+        """
         self._commands.append({
             'cmd': 'uniformBlockBinding',
             'program': program.uid,
@@ -978,6 +1020,8 @@ class GLViewer(DOMWidget):
 
 
     def bind_buffer_base(self, target:str, index:int, buffer:GLResourceWidget=None):
+        """Append a bindBufferBase command
+        """
         if target not in ["TRANSFORM_FEEDBACK_BUFFER", "UNIFORM_BUFFER"]:
             raise AttributeError("Invalid target")
 
@@ -1453,6 +1497,8 @@ class GLViewer(DOMWidget):
 
     
     def draw_buffers(self, buffers):
+        """Append a drawBuffers command
+        """
         for buf in buffers:
             if buf not in ["NONE", "BACK", "COLOR_ATTACHMENT0", 'COLOR_ATTACHMENT1', 'COLOR_ATTACHMENT2', 'COLOR_ATTACHMENT3', 'COLOR_ATTACHMENT4', 'COLOR_ATTACHMENT5', 'COLOR_ATTACHMENT6', 'COLOR_ATTACHMENT7', 'COLOR_ATTACHMENT8', 'COLOR_ATTACHMENT9', 'COLOR_ATTACHMENT10', 'COLOR_ATTACHMENT11', 'COLOR_ATTACHMENT12', 'COLOR_ATTACHMENT13', 'COLOR_ATTACHMENT14', 'COLOR_ATTACHMENT15']:
                 raise AttributeError("Invalid buffers")
