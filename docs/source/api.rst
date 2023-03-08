@@ -11,6 +11,7 @@ There is some major differences still :
 - Masks parameters are replace by positional attribute, so for example ``gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);`` in JavaScript becomes ``widget.clear(depth_buffer_bit=True, color_buffer_bit=True)`` in Python
 - Enums are replaced by strings, so for example ``gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW);`` in JavaScript becomes ``widget.buffer_data("array_buffer", data, "dynamic_draw")`` in Python
 
+All the commands you call on the GLViewer are push to a commands buffer. That commands buffer is only flushed when you call the execute_commands() method.
 
 .. automodule:: ipywebgl.glviewer
    :members:
