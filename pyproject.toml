@@ -95,10 +95,6 @@ field = [
     { name = "channel", default = "" },
     { name = "release", default = "" },
 ]
-file = [
-    { src = "pyproject.toml", version_template = "version = \"{major}.{minor}.{patch}{channel}{release}\"" },
-    { src = "ipywebgl/_version.py" },
-]
 
 [tool.tbump.version]
 current = "0.1.0"
@@ -107,3 +103,14 @@ regex = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)((?P<channel>a|b|rc|
 [tool.tbump.git]
 message_template = "Bump to {new_version}"
 tag_template = "v{new_version}"
+
+[[tool.tbump.file]]
+src = "pyproject.toml"
+version_template = "version = \"{major}.{minor}.{patch}{channel}{release}\""
+
+[[tool.tbump.file]]
+src = "ipywebgl/_version.py"
+
+[[tool.tbump.file]]
+src = "package.json"
+version_template = "\"version\": \"{major}.{minor}.{patch}{channel}{release}\""
