@@ -1153,11 +1153,11 @@ class GLViewer(DOMWidget):
             auto_execute (bool) : do we execute the commands ?. Defaults to True.
         """
         attributePointers = []
-        stride = 0
         for binding in bindings:
             buffer = binding[0]
             descriptions = binding[1]
 
+            stride = 0
             pointer = {'buffer':buffer, 'pointers':[], 'stride':0}
             attributePointers.append(pointer)
 
