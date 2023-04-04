@@ -60,3 +60,4 @@ ipykernel
 nbsphinx
 jupyter_sphinx
 nbsphinx-link
+nodejs
