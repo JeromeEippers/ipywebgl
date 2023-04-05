@@ -1143,8 +1143,11 @@ class GLViewer(DOMWidget):
         
         The bindings are a list of tuples with
         * [(buffer, "3f32 3f32", "in_vertex", "in_normal"), ...]
+        * or [(buffer, "3f32 3f32", 0, 1), ...]
+        * or [(buffer, "1mat4:1", "in_world"), ...]
         * the buffer is a buffer resource
-        * supported type for buffer definitions : [1, 2, 3, 4][i8, i16, i32, u8, u16, u32, f16, f32]
+        * supported type for buffer definitions : [1, 2, 3, 4][i8, i16, i32, u8, u16, u32, f16, f32, mat4](:[1,2,...])
+        * the optional ':' is used to set the vertexAttribDivisor on that attribute.
 
         Args:
             program (GLResourceWidget): the program to use
@@ -1163,19 +1166,33 @@ class GLViewer(DOMWidget):
 
             for desciption_index, description_string in enumerate(descriptions.split()):
                 size = description_string[0]
-                attribtype = description_string[1:]
+                attribstrings = description_string[1:].split(':')
+                attribtype = attribstrings[0]
+                attribdivisor = 0
+                if len(attribstrings) == 2:
+                    attribdivisor = int(attribstrings[1])
                 name = binding[2 + desciption_index]
 
                 if size not in ['1', '2', '3', '4']:
                     raise AttributeError("Invalid attribute size")
-                if attribtype not in ['i8', 'i16', 'i32', 'u8', 'u16', 'u32', 'f16', 'f32']:
+                if attribtype not in ['i8', 'i16', 'i32', 'u8', 'u16', 'u32', 'f16', 'f32', 'mat4']:
                     raise AttributeError("Invalid attribute type")
 
-                size = int(size)
-                attribsize = {'i8':1, 'i16':2, 'i32':4, 'u8':1, 'u16':2, 'u32':4, 'f16':2, 'f32':4}[attribtype]
-                attribtype = {'i8':'BYTE', 'i16':'SHORT', 'i32':'INT', 'u8':'UNSIGNED_BYTE', 'u16':'UNSIGNED_SHORT', 'u32':'UNSIGNED_INT', 'f16':'HALF_FLOAT', 'f32':'FLOAT'}[attribtype]
-                pointer['pointers'].append((name, size, attribtype, stride))
-                stride += attribsize * size
+                def _add(stride, size, attribtype, index_offset):
+                    isize = int(size)
+                    attribsize = {'i8':1, 'i16':2, 'i32':4, 'u8':1, 'u16':2, 'u32':4, 'f16':2, 'f32':4}[attribtype]
+                    attribgltype = {'i8':'BYTE', 'i16':'SHORT', 'i32':'INT', 'u8':'UNSIGNED_BYTE', 'u16':'UNSIGNED_SHORT', 'u32':'UNSIGNED_INT', 'f16':'HALF_FLOAT', 'f32':'FLOAT'}[attribtype]
+                    pointer['pointers'].append((name, isize, attribgltype, stride, index_offset, attribdivisor))
+                    return stride + attribsize * isize
+                
+                if attribtype == 'mat4':
+                    stride = _add(stride, '4', 'f32', 0)
+                    stride = _add(stride, '4', 'f32', 1)
+                    stride = _add(stride, '4', 'f32', 2)
+                    stride = _add(stride, '4', 'f32', 3)
+                else:
+                    stride = _add(stride, size, attribtype, 0)
+
             pointer['stride'] = stride
 
         # create the vertex array
@@ -1188,8 +1205,10 @@ class GLViewer(DOMWidget):
             self.bind_buffer('ARRAY_BUFFER', attrib['buffer'])
 
             for pointer in attrib['pointers']:
-                self.enable_vertex_attrib_array(pointer[0])
-                self.vertex_attrib_pointer(pointer[0], pointer[1], pointer[2], False, attrib['stride'], pointer[3])
+                self.enable_vertex_attrib_array(pointer[0], pointer[4])
+                self.vertex_attrib_pointer(pointer[0], pointer[1], pointer[2], False, attrib['stride'], pointer[3], pointer[4])
+                if (pointer[5] > 0):
+                    self.vertex_attrib_divisor(pointer[0], pointer[5], pointer[4])
         self.bind_buffer('ARRAY_BUFFER', None)
 
         # check if we need to create indices buffer
@@ -1222,7 +1241,7 @@ class GLViewer(DOMWidget):
         })
 
 
-    def vertex_attrib_pointer(self, index, size: int, attribtype: str, normalized: bool, stride: int, offset: int):
+    def vertex_attrib_pointer(self, index, size: int, attribtype: str, normalized: bool, stride: int, offset: int, index_offset: int =0):
         """Append a vertexAttribPointer command to the command buffer.
         
         Args:
@@ -1233,6 +1252,7 @@ class GLViewer(DOMWidget):
             normalized (bool): Specifies whether integer data values should be normalized when being casted to a float.
             stride (int): Specifies the byte offset between consecutive generic vertex attributes.
             offset (int): Specifies a offset, in bytes, of the first component in the vertex attribute array.
+            index_offset (int): add an offset to the index (location) found.
         """
         if size < 1 or size > 4:
             raise AttributeError("Invalid size")
@@ -1245,11 +1265,12 @@ class GLViewer(DOMWidget):
             'type': attribtype, 
             'normalized': normalized, 
             'stride': stride, 
-            'offset': offset
+            'offset': offset,
+            'index_offset': index_offset
         })
 
 
-    def vertex_attrib_i_pointer(self, index, size: int, attribtype: str, stride: int, offset: int):
+    def vertex_attrib_i_pointer(self, index, size: int, attribtype: str, stride: int, offset: int, index_offset: int =0):
         """Append a vertexAttribIPointer command to the command buffer.
         
         Args:
@@ -1259,6 +1280,7 @@ class GLViewer(DOMWidget):
                 Can be one of "BYTE", "UNSIGNED_BYTE", "SHORT", "UNSIGNED_SHORT", "INT", "UNSIGNED_INT".
             stride (int): Specifies the byte offset between consecutive generic vertex attributes.
             offset (int): Specifies a offset, in bytes, of the first component in the vertex attribute array.
+            index_offset (int): add an offset to the index (location) found.
         """
         if attribtype not in ["BYTE", "UNSIGNED_BYTE", "SHORT", "UNSIGNED_SHORT", "INT", "UNSIGNED_INT"]:
             raise AttributeError("Invalid attribtype")
@@ -1268,56 +1290,64 @@ class GLViewer(DOMWidget):
             'size': size, 
             'type': attribtype, 
             'stride': stride, 
-            'offset': offset
+            'offset': offset,
+            'index_offset': index_offset
         })
 
 
-    def enable_vertex_attrib_array(self, index):
+    def enable_vertex_attrib_array(self, index, index_offset: int =0):
         """Append an enableVertexAttribArray command to the command buffer.
 
         Args:
             index (int or str): Specifies the index of the generic vertex attribute to be enabled or the name of the attribute to find in the shader.
+            index_offset (int): add an offset to the index (location) found.
         """
         self._commands.append({
             'cmd': 'enableVertexAttribArray',
-            'index': index
+            'index': index,
+            'index_offset': index_offset
         })
 
 
-    def disable_vertex_attrib_array(self, index):
+    def disable_vertex_attrib_array(self, index, index_offset: int =0):
         """Append an disableVertexAttribArray command to the command buffer.
 
         Args:
             index (int or str): Specifies the index of the generic vertex attribute to be enabled or the name of the attribute to find in the shader.
+            index_offset (int): add an offset to the index (location) found.
         """
         self._commands.append({
             'cmd': 'disableVertexAttribArray',
-            'index': index
+            'index': index,
+            'index_offset': index_offset
         })
 
     
-    def vertex_attrib_divisor(self, index, divisor: int):
+    def vertex_attrib_divisor(self, index, divisor: int, index_offset: int =0):
         """Append an vertexAttribDivisor command to the command buffer.
 
             modifies the rate at which generic vertex attributes advance when rendering multiple instances of primitives with gl.drawArraysInstanced() and gl.drawElementsInstanced().
         Args:
             index (int or str): Specifies the index of the generic vertex attribute to be enabled or the name of the attribute to find in the shader.
             divisor(int): specifying the number of instances that will pass between updates of the generic attribute.
+            index_offset (int): add an offset to the index (location) found.
         """
         self._commands.append({
             'cmd': 'vertexAttribDivisor',
             'index': index,
-            'divisor': divisor
+            'divisor': divisor,
+            'index_offset': index_offset
         })
 
 
-    def vertex_attrib_fv(self, index, value: np.array):
+    def vertex_attrib_fv(self, index, value: np.array, index_offset: int =0):
         """Append an vertexAttrib[1234]fv command to the command buffer.
 
             the type of vertexAttrib function to call will be decided from the shape of the array.
         Args:
             index (int or str): Specifies the index of the generic vertex attribute or the name of the attribute to find in the shader.
             value(np.array(dtype=np.float32)): values to push.
+            index_offset (int): add an offset to the index (location) found.
         """
         meta_data, buffer = array_to_buffer(value)
         meta_data['index'] = len(self._buffers)
@@ -1325,17 +1355,19 @@ class GLViewer(DOMWidget):
         self._commands.append({
             'cmd': 'vertexAttrib[1234]fv',
             'index': index,
-            'buffer_metadata':meta_data
+            'buffer_metadata':meta_data,
+            'index_offset': index_offset
         })
 
 
-    def vertex_attrib_i4_fv(self, index, value: np.array):
+    def vertex_attrib_i4_fv(self, index, value: np.array, index_offset: int =0):
         """Append an vertexAttribI4[u]iv command to the command buffer.
 
             the type of vertexAttrib function to call will be decided from the type of the array.
         Args:
             index (int or str): Specifies the index of the generic vertex attribute or the name of the attribute to find in the shader.
             value(np.array(dtype=np.uint32 or dtype=np.int32)): values to push.
+            index_offset (int): add an offset to the index (location) found.
         """
         meta_data, buffer = array_to_buffer(value)
         meta_data['index'] = len(self._buffers)
@@ -1343,7 +1375,8 @@ class GLViewer(DOMWidget):
         self._commands.append({
             'cmd': 'vertexAttribI4[u]iv',
             'index': index,
-            'buffer_metadata':meta_data
+            'buffer_metadata':meta_data,
+            'index_offset': index_offset
         })
 
 

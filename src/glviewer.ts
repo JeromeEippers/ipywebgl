@@ -161,7 +161,7 @@ export class GLModel extends DOMWidgetModel {
   }
 
   execute_command(gl:WebGL2RenderingContext, command:any, converted_buffers:any[]){
-    //console.log(command);
+    console.log(command);
     //console.log(this.bound_buffers);
     switch(command.cmd){
       case 'viewport':
@@ -683,6 +683,7 @@ export class GLModel extends DOMWidgetModel {
       case 'disableVertexAttribArray':
       case 'vertexAttrib[1234]fv':
       case 'vertexAttribI4[u]iv':
+      case 'vertexAttribDivisor':
         {
           let index = -1;
           if (typeof command.index === 'number'){
@@ -700,6 +701,7 @@ export class GLModel extends DOMWidgetModel {
           }
           let buf = (this.bound_buffers as any)['ARRAY_BUFFER'];
           if (index >= 0){
+            index += command.index_offset
             if (command.cmd == "vertexAttribIPointer"){
               gl.vertexAttribIPointer(index, command.size, (gl as any)[command.type], command.stride, command.offset);
               if (this.bound_vao != null && buf != null){
@@ -753,6 +755,9 @@ export class GLModel extends DOMWidgetModel {
               } else if(command.buffer_metadata.dtype == "int32"){
                 gl.vertexAttribI4iv(index, converted_buffers[command.buffer_metadata.index]);
               }
+            }
+            else if (command.cmd == "vertexAttribDivisor"){
+              gl.vertexAttribDivisor(index, command.divisor);
             }
           }
           else{
