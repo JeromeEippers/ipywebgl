@@ -4,7 +4,11 @@ ipywebgl
 
 Version: |release|
 
-A Custom Jupyter Widget Library
+.. image:: ../logo_256.png
+   :alt: a WebGL2 wrapper for jupyter lab
+   :align: center
+   
+A WebGL2 library for Jupyter Lab
 
 
 Quickstart
