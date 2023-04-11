@@ -7,8 +7,8 @@ Version: |release|
 .. image:: ../logo_256.png
    :alt: a WebGL2 wrapper for jupyter lab
    :align: center
-   
-A WebGL2 library for Jupyter Lab
+
+A WebGL2 widget for Jupyter Lab
 
 
 Quickstart
