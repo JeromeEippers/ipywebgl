@@ -9,10 +9,6 @@ The simplest way to install ipywebgl is via pip::
 
     pip install ipywebgl
 
-or via conda::
-
-    conda install ipywebgl
-
 
 If you installed via pip, and notebook version < 5.3, you will also have to
 install / configure the front-end extension as well. If you are using classic
