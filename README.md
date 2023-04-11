@@ -1,10 +1,10 @@
 
 # ipywebgl
 
-<center>
-<img src='logo_256.png'><br>
+<div style="text-align: center;">
+<img src=docs/images/logo_256.png/><br>
 A WebGL2 widget for Jupyter Lab
-</center>
+</div>
 
 [![Documentation Status](https://readthedocs.org/projects/ipywebgl/badge/?version=latest)](https://ipywebgl.readthedocs.io/en/latest/?badge=latest)
 
