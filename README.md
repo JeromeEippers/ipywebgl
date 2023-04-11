@@ -6,6 +6,8 @@
 A WebGL2 widget for Jupyter Lab
 </center>
 
+[![Documentation Status](https://readthedocs.org/projects/ipywebgl/badge/?version=latest)](https://ipywebgl.readthedocs.io/en/latest/?badge=latest)
+
 ## Introduction
 
 This module is exposing a part of the WebGL2 context.  Is is assumed that you are familiar with the concepts and commands.
