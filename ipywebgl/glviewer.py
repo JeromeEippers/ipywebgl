@@ -26,6 +26,9 @@ class GLViewer(DOMWidget):
         camera_pos ([float, float, float]): the camera position in the scene. Defaults to [0,50,200].
         camera_yaw (float): the camera yaw angle in degree. Defaults to 0.
         camera_pitch (float): the camera pitch angle in degree. Defaults to 0.
+        camera_fov (float): the camera field of view in degree. Defaults to 50.
+        camera_near (float): the camera near plane distance. Defaults to 1.
+        camera_far (float): the camera far plane distance. Defaults to 5000.
         mouse_speed (float): mouse speed (camera rotation speed). Defaults to 1.
         move_speed (float): move speed (camera translation speed). Defaults to 1.
         move_keys (str): the move keys as a string. Forward, Left, Back, Right. Defaults to 'wasd'.
@@ -43,6 +46,9 @@ class GLViewer(DOMWidget):
     camera_pos = List([0,50,200]).tag(sync=True)
     camera_yaw = Float(0).tag(sync=True)
     camera_pitch = Float(0).tag(sync=True)
+    camera_fov = Float(50.0).tag(sync=True)
+    camera_near = Float(1.0).tag(sync=True)
+    camera_far = Float(5000.0).tag(sync=True)
     mouse_speed = Float(1).tag(sync=True)
     move_speed = Float(1).tag(sync=True)
     move_keys = Unicode('wasd').tag(sync=True)

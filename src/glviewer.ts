@@ -27,6 +27,9 @@ export class GLModel extends DOMWidgetModel {
       camera_pos:[0,50,200],
       camera_yaw:0,
       camera_pitch:0,
+      camera_fov:50.0,
+      camera_near:1.0,
+      camera_far:5000.0,
       mouse_speed:1,
       move_speed:1,
       move_keys:'wasd',
@@ -58,7 +61,7 @@ export class GLModel extends DOMWidgetModel {
     }
 
     this.resizeCanvas();
-    this.on_some_change(['width', 'height'], this.resizeCanvas, this);
+    this.on_some_change(['width', 'height', 'camera_fov', 'camera_near', 'camera_far'], this.resizeCanvas, this);
     this.on_some_change(['camera_pos', 'camera_yaw', 'camera_pitch'], this.run_commands, this);
 
     this.on('msg:custom', this.handle_custom_messages, this);
@@ -73,7 +76,7 @@ export class GLModel extends DOMWidgetModel {
     if (this.ctx != null){
       this.ctx.viewport(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
     }
-    this.projection_matrix = m4ProjectionMatrix(50.0, this.get('width')/this.get('height'), 1.0, 5000.0);
+    this.projection_matrix = m4ProjectionMatrix(this.get('camera_fov'), this.get('width')/this.get('height'), this.get('camera_near'), this.get('camera_far'));
   }
 
   handle_custom_messages(command: any, buffers:any) {
