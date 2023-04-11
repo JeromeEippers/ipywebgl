@@ -2,6 +2,10 @@
 Introduction
 =============
 
+.. image:: ../logo_256.png
+   :alt: a WebGL2 wrapper for jupyter lab
+   :align: center
+
 This module is exposing a part of the WebGL2 context.  Is is assumed that you are familiar with the concepts and commands.
 You can find more information about it here : https://webgl2fundamentals.org/
 
