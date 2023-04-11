@@ -4,7 +4,7 @@ ipywebgl
 
 Version: |release|
 
-.. image:: ../logo_256.png
+.. image:: images/logo_256.png
    :alt: a WebGL2 wrapper for jupyter lab
    :align: center
 
