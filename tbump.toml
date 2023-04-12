@@ -25,3 +25,6 @@ src = "ipywebgl/_version.py"
 [[file]]
 src = "package.json"
 version_template = "\"version\": \"{major}.{minor}.{patch}{channel}{release}\""
+
+[[file]]
+src = "ipywebgl/_frontend.py"
