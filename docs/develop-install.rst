@@ -1,30 +1,3 @@
-Developer install
-=================
-
-
-To install a developer version of ipywebgl, you will first need to clone
-the repository::
-
-    git clone https://github.com/JeromeEippers/ipywebgl
-    cd ipywebgl
-
-Next, install it with a develop install using pip::
-
-    pip install -e .
-
-
-If you are planning on working on the JS/frontend code, you should also do
-a link installation of the extension::
-
-    jupyter nbextension install [--sys-prefix / --user / --system] --symlink --py ipywebgl
-
-    jupyter nbextension enable [--sys-prefix / --user / --system] --py ipywebgl
-
-with the `appropriate flag`_. Or, if you are using Jupyterlab::
-
-    jupyter labextension install .
-
-
 Development Installation
 =========================
 
@@ -60,9 +33,9 @@ you might also need another flag instead of `--sys-prefix`, but we won't cover t
 of those flags here.
 
 How to see your changes
-=======================
+-----------------------
 Typescript
-----------
+^^^^^^^^^^
 If you use JupyterLab to develop then you can watch the source directory and run JupyterLab at the same time in different
 terminals to watch for changes in the extension's source and automatically rebuild the widget.::
 
@@ -76,11 +49,11 @@ terminals to watch for changes in the extension's source and automatically rebui
 After a change wait for the build to finish and then refresh your browser and the changes should take effect.
 
 Python
-------
+^^^^^^
 If you make a change to the python code then you will need to restart the notebook kernel to have it take effect.
 
 Updating the version
-====================
+--------------------
 
 To update the version, install tbump and use it to bump the version.
 By default it will also create a tag::
