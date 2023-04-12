@@ -52,6 +52,7 @@ examples = []
 
 [project.urls]
 Homepage = "https://github.com/JeromeEippers/ipywebgl"
+Documentation = "https://ipywebgl.readthedocs.io/en/latest/index.html"
 
 [tool.hatch.build]
 artifacts = [
