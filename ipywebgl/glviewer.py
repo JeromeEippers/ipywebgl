@@ -33,6 +33,7 @@ class GLViewer(DOMWidget):
         move_speed (float): move speed (camera translation speed). Defaults to 1.
         move_keys (str): the move keys as a string. Forward, Left, Back, Right. Defaults to 'wasd'.
         shader_matrix_major (str): the type of matrix (for the ViewProjection for instance) to send to the shader {'row_major' or 'column_major'}. Defaults to 'row_major'.
+        verbose (int): with verbose set to 1, all the commands executed by the frontend will be logged in the console. Defaults to 0.
     """
     _model_name = Unicode('GLModel').tag(sync=True)
     _model_module = Unicode(module_name).tag(sync=True)
@@ -53,6 +54,7 @@ class GLViewer(DOMWidget):
     move_speed = Float(1).tag(sync=True)
     move_keys = Unicode('wasd').tag(sync=True)
     shader_matrix_major = Unicode('row_major').tag(sync=True)
+    verbose = Int(0).tag(sync=True)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

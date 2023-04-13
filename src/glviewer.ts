@@ -33,6 +33,7 @@ export class GLModel extends DOMWidgetModel {
       mouse_speed:1,
       move_speed:1,
       move_keys:'wasd',
+      verbose:0,
     };
   }
 
@@ -164,7 +165,15 @@ export class GLModel extends DOMWidgetModel {
   }
 
   execute_command(gl:WebGL2RenderingContext, command:any, converted_buffers:any[]){
-    console.log(command);
+    
+    if (this.get('verbose') > 0){
+      console.log(command);
+      if (command.hasOwnProperty('buffer_metadata')){
+        console.log('data');
+        console.log(converted_buffers[command.buffer_metadata.index]);
+      }
+    }
+    
     //console.log(this.bound_buffers);
     switch(command.cmd){
       case 'viewport':
