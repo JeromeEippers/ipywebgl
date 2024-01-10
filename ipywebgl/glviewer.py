@@ -1,5 +1,6 @@
 from ipywidgets import DOMWidget, Widget, register, widget_serialization
-from traitlets import Unicode, Float, Int, Bool, validate, TraitError, Instance, List
+from ipywidgets.widgets.trait_types import bytes_serialization
+from traitlets import Unicode, Float, Int, Bool, validate, TraitError, Instance, List, Bytes
 
 import numpy as np
 
@@ -33,6 +34,8 @@ class GLViewer(DOMWidget):
         move_speed (float): move speed (camera translation speed). Defaults to 1.
         move_keys (str): the move keys as a string. Forward, Left, Back, Right. Defaults to 'wasd'.
         shader_matrix_major (str): the type of matrix (for the ViewProjection for instance) to send to the shader {'row_major' or 'column_major'}. Defaults to 'row_major'.
+        sync_image_data (bool): do we store the rendered imaged in python. This will significantly slow the rendering. Defaults to False.
+        image_data (bytes): the stored image as bytes. If the sync_image_data is set to True.
         verbose (int): with verbose set to 1, all the commands executed by the frontend will be logged in the console. Defaults to 0.
     """
     _model_name = Unicode('GLModel').tag(sync=True)
@@ -54,7 +57,13 @@ class GLViewer(DOMWidget):
     move_speed = Float(1).tag(sync=True)
     move_keys = Unicode('wasd').tag(sync=True)
     shader_matrix_major = Unicode('row_major').tag(sync=True)
+    sync_image_data = Bool(False).tag(sync=True)
+    image_data = Bytes(default_value=None, allow_none=True, read_only=True).tag(
+        sync=True, **bytes_serialization
+    )
     verbose = Int(0).tag(sync=True)
+
+    
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -87,6 +96,13 @@ class GLViewer(DOMWidget):
         """
         self.send({'commands':self._commands, 'only_once':execute_once, 'clear':clear_previous}, buffers=self._buffers)
         self.clear_commands()
+
+
+    def get_image_data(self):
+        if self.image_data == None:
+            raise Exception('no image data, please activate the sync_image_data flag and render to canvas before using this function')
+
+        return np.flip(np.array(list(bytearray(self.image_data)), dtype=np.uint8).reshape(self.height, self.width, 4), 0)
 
 
     def clear_commands(self):

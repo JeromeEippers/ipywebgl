@@ -10,6 +10,17 @@ import { m4dot, m4getColumnI, m4getColumnK, m4inverse, m4ProjectionMatrix, m4Tra
 import { GLResource } from './glresource';
 import { buffer_to_array } from './arraybuffer';
 
+function serializeImageData(array: Uint8ClampedArray) {
+  return new DataView(array.buffer.slice(0));
+}
+
+function deserializeImageData(dataview: DataView | null) {
+  if (dataview === null) {
+    return null;
+  }
+
+  return new Uint8ClampedArray(dataview.buffer);
+}
 
 export class GLModel extends DOMWidgetModel {
   defaults() {
@@ -33,12 +44,18 @@ export class GLModel extends DOMWidgetModel {
       mouse_speed:1,
       move_speed:1,
       move_keys:'wasd',
+      sync_image_data:false,
+      image_data: null,
       verbose:0,
     };
-  }
+  } 
 
   static serializers: ISerializers = {
     ...DOMWidgetModel.serializers,
+    image_data: {
+      serialize: serializeImageData,
+      deserialize: deserializeImageData
+    }
   };
 
   initialize(attributes: any, options: any) {
@@ -152,6 +169,23 @@ export class GLModel extends DOMWidgetModel {
     commands.forEach((command:any)=>{
       this.execute_command(gl, command, converted_buffers);
     });
+
+    if (this.get('sync_image_data')){
+      const width = this.get('width');
+      const height = this.get('height');
+      const pixels = new Uint8ClampedArray( width * height * 4 );
+      gl.readPixels(
+        0,
+        0,
+        width,
+        height,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        pixels,
+      );
+      this.set('image_data', pixels);
+      this.save_changes();
+    }
   }
 
   glEnumToString(gl:WebGL2RenderingContext, value:any) {
